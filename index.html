@@ -14,12 +14,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
 <style>
 :root{
   --bg:#0f0f0f;--surf:#171717;--surf2:#1f1f1f;
   --bdr:#272727;--bdr2:#353535;
   --gold:#c49a2a;--gold-dim:#8a6b1a;--gold-glow:rgba(196,154,42,0.35);
   --t1:#ede9e0;--t2:#9a9088;--t3:#5a5550;
+  --me-bg:#1a3a2a;--me-border:#2d6a4f;--me-text:#a8d8c0;
+  --them-bg:#1f1f1f;--them-border:#2a2a2a;--them-text:#c8c0b8;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 body{background:var(--bg);color:var(--t1);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5}
@@ -27,39 +30,26 @@ body{background:var(--bg);color:var(--t1);font-family:'Inter',system-ui,sans-ser
 details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
 input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.6)}
 a{text-decoration:none}
-/* Base inputs */
-input,select,textarea{
-  background:var(--surf2);border:1px solid var(--bdr);border-radius:10px;
-  color:var(--t1);font-family:'Inter',system-ui,sans-serif;font-size:13px;
-  padding:10px 13px;width:100%;outline:none;transition:border-color .15s;
-}
+input,select,textarea{background:var(--surf2);border:1px solid var(--bdr);border-radius:10px;color:var(--t1);font-family:'Inter',system-ui,sans-serif;font-size:13px;padding:10px 13px;width:100%;outline:none;transition:border-color .15s}
 input:focus,select:focus,textarea:focus{border-color:var(--gold)}
 input::placeholder,textarea::placeholder{color:var(--t3)}
 select option{background:var(--surf2)}
 button{font-family:'Inter',system-ui,sans-serif;cursor:pointer;border:none;outline:none;background:none}
-/* Buttons */
 .btn-p{background:var(--gold);color:#0f0f0f;font-weight:700;border-radius:10px;padding:13px;font-size:14px;width:100%;transition:opacity .15s;letter-spacing:.01em}
 .btn-p:active{opacity:.8}
 .btn-s{background:var(--surf2);color:var(--t2);border:1px solid var(--bdr);border-radius:10px;padding:13px;font-size:14px;width:100%}
-/* Cards */
 .card{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:16px}
-/* Badges */
 .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;letter-spacing:.03em}
-/* Labels */
 .lbl{display:block;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
-/* Modal */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;display:flex;align-items:flex-end;backdrop-filter:blur(3px)}
 .sheet{background:var(--surf);border-radius:20px 20px 0 0;padding:8px 16px 20px;width:100%;max-width:640px;margin:0 auto;max-height:92vh;overflow-y:auto}
 .handle{width:36px;height:4px;background:var(--bdr2);border-radius:2px;margin:0 auto 18px}
-/* Tabs */
 .tabs{display:flex;background:var(--surf2);border-radius:12px;padding:4px;gap:3px}
 .tab{flex:1;padding:8px 4px;border-radius:8px;font-size:12px;font-weight:500;background:transparent;color:var(--t3);transition:all .15s}
 .tab.on{background:var(--surf);color:var(--t1);box-shadow:0 1px 3px rgba(0,0,0,.4)}
-/* Spin */
+.stitle{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{animation:spin .8s linear infinite}
-/* Section titles */
-.stitle{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -73,15 +63,12 @@ const INSTRUMENTOS=['Alto','Tenor','Barítono','Soprano','Contralto','Otro'];
 const PRODUCTOS=['Kaus','Pegasus','Tempra L','Tempra M','Flores','Floresta'];
 const ORIGENES=['Instagram','WhatsApp','Referido','Feria','Endorser'];
 const SERVICIOS=['Boquilla nueva','Refacing'];
+const PABLO_NAMES=['Vos','Yo','Pablo','Pablo Scaglia','You','tú'];
 const BADGE_STYLE={
-  'Frío':            {bg:'#162140',c:'#90cdf4'},
-  'Potencial':       {bg:'#241854',c:'#c4b5fd'},
-  'Propuesta enviada':{bg:'#3a2500',c:'#f6c860'},
-  'Seguimiento 1':   {bg:'#3a1800',c:'#fbd38d'},
-  'Seguimiento 2':   {bg:'#3a1800',c:'#fbd38d'},
-  'Seguimiento 3':   {bg:'#3a0a0a',c:'#fc8181'},
-  'Ganado':          {bg:'#0f2d1e',c:'#68d391'},
-  'Perdido':         {bg:'#1a1a1a',c:'#5a5550'},
+  'Frío':{bg:'#162140',c:'#90cdf4'},'Potencial':{bg:'#241854',c:'#c4b5fd'},
+  'Propuesta enviada':{bg:'#3a2500',c:'#f6c860'},'Seguimiento 1':{bg:'#3a1800',c:'#fbd38d'},
+  'Seguimiento 2':{bg:'#3a1800',c:'#fbd38d'},'Seguimiento 3':{bg:'#3a0a0a',c:'#fc8181'},
+  'Ganado':{bg:'#0f2d1e',c:'#68d391'},'Perdido':{bg:'#1a1a1a',c:'#5a5550'},
 };
 const SK={LEADS:'sc-leads',SETTINGS:'sc-settings',HIST:id=>`sc-hist-${id}`};
 const GKEY='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';
@@ -97,12 +84,16 @@ const isOver=d=>!!d&&d<tod();
 const isToday=d=>!!d&&d===tod();
 const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
 
-/* ── Markdown ── */
-function Md({t}){
-  const h=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--gold)">$1</strong>')
-    .replace(/\n/g,'<br>');
-  return <div dangerouslySetInnerHTML={{__html:h}} style={{color:'var(--t1)',fontSize:13,lineHeight:1.8}}/>;
+function toISO(dateStr){
+  const p=dateStr.split('/');
+  if(p.length!==3)return null;
+  const y=p[2].length===2?'20'+p[2]:p[2];
+  return `${y}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+}
+function parseChatDates(msgs){
+  if(!msgs.length)return{};
+  const dates=msgs.map(m=>toISO(m.date)).filter(Boolean).sort();
+  return{primerContacto:dates[0]||null,ultimoContacto:dates[dates.length-1]||null};
 }
 
 /* ── WA parser ── */
@@ -114,7 +105,19 @@ function parseWA(text){
 }
 function guessName(msgs){
   const s=[...new Set(msgs.map(m=>m.who))];
-  return s.find(x=>!['Vos','Yo','Pablo','Pablo Scaglia','You','tú'].includes(x))||'';
+  return s.find(x=>!PABLO_NAMES.includes(x))||'';
+}
+
+/* ── Notifications ── */
+function requestNotifs(){
+  if('Notification'in window&&Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+}
+function notify(title,body){
+  if('Notification'in window&&Notification.permission==='granted'){
+    new Notification(title,{body,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%23c49a2a"/></svg>'});
+  }
 }
 
 /* ── Groq ── */
@@ -132,24 +135,22 @@ async function extractInfo(src,key){
   const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},
     body:JSON.stringify({model:'llama-3.1-8b-instant',max_tokens:200,messages:[{role:'user',content:
-`Analizá esta conversación de WhatsApp y extraé los datos. Respondé SOLO con JSON válido, sin texto extra ni backticks:
-
-{"nombre":"nombre del contacto o null","instrumento":"Alto|Tenor|Barítono|Soprano|Contralto|Otro o null","servicio":"Boquilla nueva|Refacing o null","boquilla_actual":"marca modelo o null","apertura":"número apertura o null"}
-
+`Analizá esta conversación y extraé los datos. Respondé SOLO con JSON válido sin backticks:
+{"nombre":"nombre del contacto o null","instrumento":"Alto|Tenor|Barítono|Soprano|Contralto|Otro o null","servicio":"Boquilla nueva|Refacing o null","boquilla_actual":"marca modelo o null","apertura":"número o null"}
 Conversación:
 ${src.slice(0,2500)}`}]})
   });
   if(!r.ok)return{};
   const d=await r.json();
-  const t=d.choices?.[0]?.message?.content||'{}';
-  try{return JSON.parse(t.replace(/```json|```/g,'').trim());}catch{return{};}
+  try{return JSON.parse((d.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim());}catch{return{};}
 }
 
 async function qualify(src,key){
+  const today=new Date();
   const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},
     body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:900,messages:[{role:'user',content:
-`Sos el asistente de ventas de Scaglia Mouthpieces (Buenos Aires). Analizá esta conversación y respondé con este formato exacto:
+`Sos el asistente de ventas de Scaglia Mouthpieces (Buenos Aires). Hoy es ${tod()}. Analizá esta conversación:
 
 **1. Qué quiere**
 Instrumento, producto o refacing, apertura, boquilla actual, presupuesto si se mencionó.
@@ -161,10 +162,13 @@ Caliente / Tibio / Frío — por qué en una línea.
 Elegí UNA: Frío | Potencial | Propuesta enviada | Seguimiento 1 | Seguimiento 2 | Seguimiento 3 | Ganado | Perdido
 
 **4. Próximo paso**
-Acción concreta y cuándo.
+Acción concreta en una línea.
 
 **5. Mensaje sugerido**
-Escribí el mensaje exacto de WhatsApp a mandarle ahora mismo. Tono natural y argentino, máximo 3 líneas. Entre comillas.
+Texto exacto de WhatsApp a mandar, tono natural y argentino, máximo 3 líneas, entre comillas.
+
+**6. Fecha próximo contacto**
+Formato YYYY-MM-DD. Basate en la etapa: Frío=30 días, Potencial=14, Propuesta enviada=7, Seguimiento 1=7, Seguimiento 2=14, Seguimiento 3=30.
 
 Productos: Kaus, Pegasus (PULSE) · Tempra L, Tempra M, Flores, Floresta (AURA). Boquilla HR: USD 400. Refacing: USD 100–150.
 
@@ -175,14 +179,199 @@ ${src.slice(0,4500)}`}]})
   const d=await r.json();return d.choices?.[0]?.message?.content||'Sin respuesta.';
 }
 
-/* ── EtapaBadge ── */
+function parseProxDate(result){
+  const lines=result.split('\n');
+  const i6=lines.findIndex(l=>/6\./i.test(l));
+  const chunk=i6>=0?lines.slice(i6,i6+3).join(' '):result;
+  const m=chunk.match(/(\d{4}-\d{2}-\d{2})/);
+  return m?m[1]:null;
+}
+
+/* ── Google Drive ── */
+async function listDriveZips(token){
+  const q=encodeURIComponent("name contains '.zip' and trashed=false");
+  const fields=encodeURIComponent("files(id,name,modifiedTime)");
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&orderBy=modifiedTime+desc&pageSize=50`,
+    {headers:{Authorization:`Bearer ${token}`}});
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.files||[];
+}
+async function downloadDriveFile(fileId,token){
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    {headers:{Authorization:`Bearer ${token}`}});
+  if(!r.ok)throw new Error(`Drive ${r.status}`);
+  return r.blob();
+}
+
+function DriveImport({settings,onImport,onName,groqKey}){
+  const [st,setSt]=useState('idle'); // idle | connecting | files | loading | done | err
+  const [files,setFiles]=useState([]);
+  const [token,setToken]=useState(null);
+  const [msg,setMsg]=useState('');
+
+  const connect=()=>{
+    if(!settings?.googleClientId){alert('Configurá el Google Client ID en Ajustes (⚙) primero.');return;}
+    if(!window.google){alert('Google aún se está cargando. Esperá un segundo e intentá de nuevo.');return;}
+    setSt('connecting');
+    const tc=window.google.accounts.oauth2.initTokenClient({
+      client_id:settings.googleClientId,
+      scope:'https://www.googleapis.com/auth/drive.readonly',
+      callback:async resp=>{
+        if(resp.error){setSt('err');setMsg(resp.error);return;}
+        setToken(resp.access_token);
+        setSt('loading');setMsg('Buscando ZIPs en Drive…');
+        try{
+          const zips=await listDriveZips(resp.access_token);
+          setFiles(zips);setSt('files');
+        }catch(e){setSt('err');setMsg(e.message);}
+      },
+    });
+    tc.requestAccessToken({prompt:''});
+  };
+
+  const pick=async file=>{
+    setSt('loading');setMsg(`Descargando ${file.name}…`);
+    try{
+      const blob=await downloadDriveFile(file.id,token);
+      const zip=await JSZip.loadAsync(blob);const items=[];
+      const tk=Object.keys(zip.files).find(k=>k.endsWith('.txt')&&!zip.files[k].dir);
+      if(tk){setMsg('Procesando chat…');
+        const content=await zip.files[tk].async('string');
+        const msgs=parseWA(content);
+        if(msgs.length>0){
+          const name=guessName(msgs);if(name&&onName)onName(name);
+          const dates=parseChatDates(msgs);
+          items.push({id:uid(),ts:new Date().toISOString(),tipo:'chat',text:`💬 ${msgs.length} mensajes`,mensajes:msgs,...dates});
+        }
+      }
+      const ak=Object.keys(zip.files).filter(k=>!zip.files[k].dir&&/\.(ogg|opus|mp3|m4a|wav)$/i.test(k));
+      if(ak.length>0&&!groqKey){items.push({id:uid(),ts:new Date().toISOString(),tipo:'aviso',text:`🎙 ${ak.length} audio(s). Configurá Groq en ⚙.`});}
+      else{for(let i=0;i<ak.length;i++){
+        const k=ak[i];const fname=k.split('/').pop();
+        setMsg(`Transcribiendo ${i+1}/${ak.length}…`);
+        try{const b=await zip.files[k].async('blob');const t=await transcribeAudio(b,fname,groqKey);
+          items.push({id:uid(),ts:new Date().toISOString(),tipo:'audio',text:`🎙 ${fname}\n${t}`});
+        }catch(e){items.push({id:uid(),ts:new Date().toISOString(),tipo:'error',text:`⚠ ${fname}: ${e.message}`});}
+      }}
+      if(items.length){onImport(items);setSt('done');setMsg(`✓ "${file.name}" importado`);}
+      else{setSt('files');setMsg('No se encontró contenido.');}
+    }catch(e){setSt('err');setMsg(e.message);}
+  };
+
+  if(st==='idle')return(
+    <div style={{position:'relative',overflow:'hidden',borderRadius:10,marginBottom:12}}>
+      <div style={{padding:'12px 14px',background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13,color:'var(--t2)',pointerEvents:'none'}}>
+        📂 Seleccionar desde Google Drive
+      </div>
+      <button onClick={connect} style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:0,cursor:'pointer'}}/>
+    </div>
+  );
+  if(st==='connecting'||st==='loading')return(
+    <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',marginBottom:12}}>
+      <Spin/><span style={{color:'var(--gold)',fontSize:12}}>{msg||'Conectando con Google…'}</span>
+    </div>
+  );
+  if(st==='done')return(
+    <div style={{padding:'10px 14px',background:'#0f2d1e',border:'1px solid #2d6a4f',borderRadius:10,marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <span style={{color:'#68d391',fontSize:12}}>{msg}</span>
+      <button onClick={()=>setSt('files')} style={{color:'var(--t3)',fontSize:12,textDecoration:'underline'}}>Otro archivo</button>
+    </div>
+  );
+  if(st==='err')return(
+    <div style={{marginBottom:12}}>
+      <p style={{color:'#fc8181',fontSize:12,marginBottom:8}}>⚠ Error: {msg}</p>
+      <button onClick={()=>setSt('idle')} style={{fontSize:12,color:'var(--t3)',textDecoration:'underline'}}>Reintentar</button>
+    </div>
+  );
+  // files
+  return(
+    <div style={{marginBottom:12}}>
+      <p style={{fontSize:11,color:'var(--t3)',marginBottom:8,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}}>
+        ZIPs en tu Drive ({files.length})
+      </p>
+      {files.length===0&&<p style={{fontSize:12,color:'var(--t3)'}}>No se encontraron archivos .zip en Drive.</p>}
+      <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:200,overflowY:'auto'}}>
+        {files.map(f=>(
+          <button key={f.id} onClick={()=>pick(f)} style={{
+            padding:'10px 14px',background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:10,
+            textAlign:'left',fontSize:12,color:'var(--t2)',display:'flex',justifyContent:'space-between',alignItems:'center'
+          }}>
+            <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>📦 {f.name}</span>
+            <span style={{fontSize:10,color:'var(--t3)',marginLeft:8,flexShrink:0}}>
+              {new Date(f.modifiedTime).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})}
+            </span>
+          </button>
+        ))}
+      </div>
+      <button onClick={()=>setSt('idle')} style={{fontSize:11,color:'var(--t3)',textDecoration:'underline',marginTop:8}}>Cancelar</button>
+    </div>
+  );
+}
+
+/* ── runQualifyForLead ── (usado en detalle y en refresh all) */
+async function runQualifyForLead(lead,key){
+  const hist=sg(SK.HIST(lead.id),[]);
+  const src=hist.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text||'').join('\n\n---\n\n');
+  if(!src)return null;
+  const [info,result]=await Promise.all([extractInfo(src,key),qualify(src,key)]);
+  const updates={ultimoContacto:tod()};
+  if(info.nombre)updates.nombre=info.nombre;
+  if(info.instrumento)updates.instrumento=info.instrumento;
+  if(info.servicio)updates.servicio=info.servicio;
+  const found=ETAPAS.find(e=>result.includes(e));
+  if(found)updates.etapa=found;
+  const proxDate=parseProxDate(result);
+  if(proxDate)updates.prox=proxDate;
+  const analisisItem={id:uid(),ts:new Date().toISOString(),tipo:'analisis',text:result};
+  const newHist=[analisisItem,...hist];
+  ss(SK.HIST(lead.id),newHist);
+  return{updates,result};
+}
+
+/* ── UI components ── */
+function Md({t}){
+  const h=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--gold)">$1</strong>')
+    .replace(/\n/g,'<br>');
+  return <div dangerouslySetInnerHTML={{__html:h}} style={{color:'var(--t1)',fontSize:13,lineHeight:1.8}}/>;
+}
+
 function EtapaBadge({etapa}){
   const s=BADGE_STYLE[etapa]||{bg:'#1a1a1a',c:'#5a5550'};
   return <span className="badge" style={{background:s.bg,color:s.c}}>{etapa}</span>;
 }
-
-/* ── Spinner ── */
 function Spin(){return<div className="spin" style={{width:16,height:16,border:'2px solid var(--gold)',borderTopColor:'transparent',borderRadius:'50%',flexShrink:0}}/>;}
+
+/* ── ChatBubbles ── */
+function ChatBubbles({mensajes,leadNombre}){
+  const visible=mensajes.slice(-60); // últimos 60 mensajes
+  return<div style={{display:'flex',flexDirection:'column',gap:8,padding:'4px 0'}}>
+    {visible.map((m,i)=>{
+      const isMe=PABLO_NAMES.includes(m.who);
+      return<div key={i} style={{display:'flex',flexDirection:'column',alignItems:isMe?'flex-end':'flex-start'}}>
+        <span style={{fontSize:10,color:'var(--t3)',marginBottom:2,fontWeight:700,paddingLeft:isMe?0:4,paddingRight:isMe?4:0}}>
+          {isMe?'YO':leadNombre||m.who}
+        </span>
+        <div style={{
+          maxWidth:'82%',padding:'8px 12px',lineHeight:1.5,fontSize:12,
+          borderRadius:isMe?'12px 12px 2px 12px':'12px 12px 12px 2px',
+          background:isMe?'var(--me-bg)':'var(--them-bg)',
+          border:`1px solid ${isMe?'var(--me-border)':'var(--them-border)'}`,
+          color:isMe?'var(--me-text)':'var(--them-text)',
+        }}>
+          <div style={{whiteSpace:'pre-wrap'}}>{m.text}</div>
+          <div style={{fontSize:10,color:isMe?'#6aaa8a':'var(--t3)',marginTop:4,textAlign:'right'}}>
+            {m.date} {m.time}
+          </div>
+        </div>
+      </div>;
+    })}
+    {mensajes.length>60&&<div style={{textAlign:'center',fontSize:11,color:'var(--t3)',padding:'8px 0'}}>
+      Mostrando los últimos 60 de {mensajes.length} mensajes
+    </div>}
+  </div>;
+}
 
 /* ── ZipImport ── */
 function ZipImport({onImport,onName,groqKey}){
@@ -194,11 +383,13 @@ function ZipImport({onImport,onName,groqKey}){
       const zip=await JSZip.loadAsync(file);const items=[];
       const tk=Object.keys(zip.files).find(k=>k.endsWith('.txt')&&!zip.files[k].dir);
       if(tk){setMsg('Procesando chat…');
-        const c=await zip.files[tk].async('string');const msgs=parseWA(c);
+        const content=await zip.files[tk].async('string');
+        const msgs=parseWA(content);
         if(msgs.length>0){
           const name=guessName(msgs);if(name&&onName)onName(name);
-          const prev=msgs.slice(0,60).map(m=>`[${m.date} ${m.time}] ${m.who}: ${m.text}`).join('\n');
-          items.push({id:uid(),ts:new Date().toISOString(),tipo:'chat',text:`💬 ${msgs.length} mensajes\n\n${prev}${msgs.length>60?`\n…(${msgs.length-60} más)`:''}`});
+          const dates=parseChatDates(msgs);
+          items.push({id:uid(),ts:new Date().toISOString(),tipo:'chat',
+            text:`💬 ${msgs.length} mensajes`,mensajes:msgs,...dates});
         }
       }
       const ak=Object.keys(zip.files).filter(k=>!zip.files[k].dir&&/\.(ogg|opus|mp3|m4a|wav)$/i.test(k));
@@ -239,10 +430,10 @@ function PasteImport({onImport,onName}){
   const go=()=>{
     if(!text.trim())return;
     const msgs=parseWA(text.trim());
-    if(!msgs.length){setErr('No se reconoció el formato. Exportá el chat y pegá el contenido completo del .txt.');return;}
+    if(!msgs.length){setErr('No se reconoció el formato. Exportá el chat sin multimedia y pegá el .txt completo.');return;}
     const name=guessName(msgs);if(name&&onName)onName(name);
-    const prev=msgs.slice(0,60).map(m=>`[${m.date} ${m.time}] ${m.who}: ${m.text}`).join('\n');
-    onImport([{id:uid(),ts:new Date().toISOString(),tipo:'chat',text:`💬 ${msgs.length} mensajes\n\n${prev}${msgs.length>60?`\n…(${msgs.length-60} más)`:''}`}]);
+    const dates=parseChatDates(msgs);
+    onImport([{id:uid(),ts:new Date().toISOString(),tipo:'chat',text:`💬 ${msgs.length} mensajes`,mensajes:msgs,...dates}]);
     setDone(true);setText('');
   };
   if(done)return<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#0f2d1e',border:'1px solid #2d6a4f',borderRadius:10,marginBottom:12}}>
@@ -305,24 +496,30 @@ function LeadModal({leads,settings,onSave,onClose}){
   const [qualEtapa,setQualEtapa]=useState('');
 
   const runQualify=async(items)=>{
-    if(!settings?.groqKey) return;
-    const src=items.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text).join('\n\n---\n\n');
-    if(!src) return;
+    if(!settings?.groqKey)return;
+    const src=items.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text||'').join('\n\n---\n\n');
+    if(!src)return;
     setQualifying(true);
     try{
       const [info,result]=await Promise.all([extractInfo(src,settings.groqKey),qualify(src,settings.groqKey)]);
-      // Aplicar campos extraídos — nombre siempre desde la IA si está disponible
-      setData(d=>({
-        ...d,
-        nombre:      info.nombre      || d.nombre,
-        instrumento: info.instrumento || d.instrumento,
-        servicio:    info.servicio    || d.servicio,
-        ultimoContacto: tod(),
+      const found=ETAPAS.find(e=>result.includes(e));
+      const proxDate=parseProxDate(result);
+      setData(d=>({...d,
+        nombre:info.nombre||d.nombre,
+        instrumento:info.instrumento||d.instrumento,
+        servicio:info.servicio||d.servicio,
+        etapa:found||d.etapa,
+        prox:proxDate||d.prox,
       }));
       setQualResult(result);
-      const found=ETAPAS.find(e=>result.includes(e));
-      if(found){setData(d=>({...d,etapa:found}));setQualEtapa(found);}
-    }catch(e){setQualResult(`Error al calificar: ${e.message}`);}
+      if(found)setQualEtapa(found);
+      // Derivar ultimoContacto del chat
+      const chatItem=items.find(h=>h.tipo==='chat');
+      if(chatItem?.ultimoContacto)setData(d=>({...d,ultimoContacto:chatItem.ultimoContacto}));
+      // Añadir análisis al historial pendiente
+      const analisisItem={id:uid(),ts:new Date().toISOString(),tipo:'analisis',text:result};
+      setPh(p=>[...p,analisisItem]);
+    }catch(e){setQualResult(`Error: ${e.message}`);}
     setQualifying(false);
   };
 
@@ -333,16 +530,12 @@ function LeadModal({leads,settings,onSave,onClose}){
 
   const save=()=>{
     if(!data.nombre){alert('Ingresá el nombre');return;}
-    // Detección de duplicados
     const tel=data.telefono?.replace(/\D/g,'');
     const nombre=data.nombre.toLowerCase().trim();
     const dupTel=tel&&leads.find(l=>l.telefono?.replace(/\D/g,'')===tel);
     const dupNombre=!dupTel&&leads.find(l=>l.nombre?.toLowerCase().trim()===nombre);
-    if(dupTel){
-      if(!confirm(`⚠ Ya existe un lead con ese teléfono:\n"${dupTel.nombre}" (${dupTel.etapa})\n\n¿Crear igual?`))return;
-    } else if(dupNombre){
-      if(!confirm(`⚠ Ya existe un lead con ese nombre:\n"${dupNombre.nombre}" (${dupNombre.etapa})\n\n¿Crear igual?`))return;
-    }
+    if(dupTel){if(!confirm(`⚠ Ya existe "${dupTel.nombre}" con ese teléfono (${dupTel.etapa}). ¿Crear igual?`))return;}
+    else if(dupNombre){if(!confirm(`⚠ Ya existe "${dupNombre.nombre}" con ese nombre (${dupNombre.etapa}). ¿Crear igual?`))return;}
     if(ph.length)ss(SK.HIST(data.id),ph);
     onSave(data);
   };
@@ -350,22 +543,20 @@ function LeadModal({leads,settings,onSave,onClose}){
   return<Sheet title="Nuevo lead" onClose={onClose}>
     <div style={{background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:12,padding:14,marginBottom:18}}>
       <p className="stitle">Importar chat · la IA califica automáticamente</p>
+      <DriveImport settings={settings} onImport={handleImport} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))} groqKey={settings?.groqKey}/>
       <PasteImport onImport={handleImport} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))}/>
       <ZipImport onImport={handleImport} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))} groqKey={settings?.groqKey}/>
     </div>
-
-    {/* Qualification status */}
     {qualifying&&<div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:12,marginBottom:14}}>
-      <Spin/><span style={{color:'var(--gold)',fontSize:12,fontWeight:500}}>Calificando lead con IA…</span>
+      <Spin/><span style={{color:'var(--gold)',fontSize:12,fontWeight:500}}>Calificando lead…</span>
     </div>}
     {qualEtapa&&!qualifying&&<div style={{padding:'10px 14px',background:'#0f2d1e',border:'1px solid #2d6a4f',borderRadius:12,marginBottom:8,display:'flex',alignItems:'center',gap:8}}>
-      <span>✓</span><span style={{color:'#68d391',fontSize:12,fontWeight:600}}>Etapa sugerida aplicada: {qualEtapa}</span>
+      <span>✓</span><span style={{color:'#68d391',fontSize:12,fontWeight:600}}>Etapa: {qualEtapa}</span>
     </div>}
     {qualResult&&!qualifying&&<details style={{background:'var(--surf2)',border:'1px solid var(--gold-dim)',borderRadius:12,marginBottom:14,overflow:'hidden'}}>
-      <summary style={{padding:'10px 14px',fontSize:12,color:'var(--gold)',cursor:'pointer',fontWeight:500}}>Ver análisis completo ▾</summary>
+      <summary style={{padding:'10px 14px',fontSize:12,color:'var(--gold)',cursor:'pointer',fontWeight:500}}>Ver análisis ▾</summary>
       <div style={{padding:'0 14px 14px',borderTop:'1px solid var(--bdr)'}}><div style={{height:10}}/><Md t={qualResult}/></div>
     </details>}
-
     <LeadForm data={data} onChange={setData}/>
     <div style={{display:'flex',gap:10,marginTop:18,paddingBottom:4}}>
       <button className="btn-s" onClick={onClose}>Cancelar</button>
@@ -380,7 +571,10 @@ function SettingsModal({settings,onSave,onClose}){
   return<Sheet title="Ajustes" onClose={onClose}>
     <label className="lbl">API Key de Groq (transcripción + IA)</label>
     <input type="password" value={data.groqKey||''} onChange={e=>setData(d=>({...d,groqKey:e.target.value}))} placeholder="gsk_…" style={{marginBottom:6}}/>
-    <p style={{fontSize:11,color:'var(--t3)',marginBottom:20}}>Gratis en console.groq.com</p>
+    <p style={{fontSize:11,color:'var(--t3)',marginBottom:16}}>Gratis en console.groq.com</p>
+    <label className="lbl">Google Client ID (para importar desde Drive)</label>
+    <input type="text" value={data.googleClientId||''} onChange={e=>setData(d=>({...d,googleClientId:e.target.value}))} placeholder="64071...apps.googleusercontent.com" style={{marginBottom:6,fontSize:11}}/>
+    <p style={{fontSize:11,color:'var(--t3)',marginBottom:20}}>console.cloud.google.com → Credenciales → OAuth</p>
     <div style={{display:'flex',gap:10,paddingBottom:4}}>
       <button className="btn-s" onClick={onClose}>Cancelar</button>
       <button className="btn-p" onClick={()=>onSave(data)}>Guardar</button>
@@ -389,12 +583,11 @@ function SettingsModal({settings,onSave,onClose}){
 }
 
 /* ── Dashboard ── */
-function Dashboard({leads,urgentes,onSelect,onUpdate}){
+function Dashboard({leads,urgentes,onSelect,onUpdate,onRefreshAll,refreshing}){
   const activos=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido').length;
   const ganados=leads.filter(l=>l.etapa==='Ganado').length;
   const bump=(l,d)=>{const b=new Date((l.prox||tod())+'T12:00:00');b.setDate(b.getDate()+d);onUpdate({...l,prox:b.toISOString().split('T')[0]});};
-  return<div style={{paddingTop:20,display:'flex',flexDirection:'column',gap:24}}>
-    {/* Stats */}
+  return<div style={{paddingTop:16,display:'flex',flexDirection:'column',gap:24}}>
     <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
       {[{v:activos,l:'Activos',c:'var(--gold)'},{v:urgentes.length,l:'Urgentes',c:urgentes.length?'#fc8181':'#68d391'},{v:ganados,l:'Ganados',c:'#68d391'}].map(({v,l,c})=>(
         <div key={l} style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:'14px 8px',textAlign:'center'}}>
@@ -403,27 +596,35 @@ function Dashboard({leads,urgentes,onSelect,onUpdate}){
         </div>
       ))}
     </div>
-    {/* Urgentes */}
+
+    {/* Refresh all button */}
+    <button onClick={onRefreshAll} disabled={refreshing} style={{
+      display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+      background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:12,
+      padding:'12px 16px',fontSize:13,color:refreshing?'var(--gold)':'var(--t2)',
+      fontWeight:500,transition:'all .15s',
+    }}>
+      {refreshing?<><Spin/>Actualizando todos los leads…</>:<>↻ Refrescar y re-calificar todos los leads</>}
+    </button>
+
     <div>
       <p className="stitle">Seguimientos pendientes</p>
       {urgentes.length===0?(
         <div style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:'36px 16px',textAlign:'center'}}>
           <div style={{fontSize:28,marginBottom:8}}>✓</div>
-          <p style={{color:'var(--t3)',fontSize:13}}>Estás al día con todos los seguimientos</p>
+          <p style={{color:'var(--t3)',fontSize:13}}>Estás al día</p>
         </div>
       ):urgentes.map(l=>(
         <div key={l.id} style={{background:'var(--surf)',borderRadius:14,padding:14,marginBottom:10,border:'1px solid var(--bdr)',borderLeft:`3px solid ${isOver(l.prox)?'#fc8181':'var(--gold)'}`}}>
           <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
             <button onClick={()=>onSelect(l.id)} style={{flex:1,textAlign:'left'}}>
               <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:7,flexWrap:'wrap'}}>
-                <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:6,background:isOver(l.prox)?'#3a0a0a':'#3a2500',color:isOver(l.prox)?'#fc8181':'#f6c860'}}>
-                  {isOver(l.prox)?'Vencido':'Hoy'}
-                </span>
+                <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:6,background:isOver(l.prox)?'#3a0a0a':'#3a2500',color:isOver(l.prox)?'#fc8181':'#f6c860'}}>{isOver(l.prox)?'Vencido':'Hoy'}</span>
                 <EtapaBadge etapa={l.etapa}/>
               </div>
               <div style={{fontSize:15,fontWeight:600,marginBottom:3}}>{l.nombre}</div>
               <div style={{fontSize:12,color:'var(--t2)'}}>{[l.instrumento,l.servicio,l.producto].filter(Boolean).join(' · ')}</div>
-              <div style={{fontSize:11,color:'var(--t3)',marginTop:3}}>{fmt(l.prox)}</div>
+              <div style={{fontSize:11,color:'var(--t3)',marginTop:2}}>{fmt(l.prox)}</div>
             </button>
             <div style={{display:'flex',flexDirection:'column',gap:6,flexShrink:0}}>
               <button onClick={()=>bump(l,7)} style={{fontSize:11,background:'var(--surf2)',color:'var(--t2)',padding:'5px 10px',borderRadius:8,border:'1px solid var(--bdr)'}}>+7d</button>
@@ -433,16 +634,15 @@ function Dashboard({leads,urgentes,onSelect,onUpdate}){
         </div>
       ))}
     </div>
-    {/* Pipeline */}
+
     <div>
       <p className="stitle">Pipeline</p>
-      {ETAPAS.filter(e=>e!=='Ganado'&&e!=='Perdido').map(e=>{
-        const n=leads.filter(l=>l.etapa===e).length;
-        return<div key={e} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'11px 14px',background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:10,marginBottom:6}}>
+      {ETAPAS.filter(e=>e!=='Ganado'&&e!=='Perdido').map(e=>{const n=leads.filter(l=>l.etapa===e).length;return(
+        <div key={e} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'11px 14px',background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:10,marginBottom:6}}>
           <span style={{fontSize:13,color:'var(--t2)'}}>{e}</span>
           <span style={{fontSize:14,fontWeight:700,color:n?'var(--gold)':'var(--t3)'}}>{n}</span>
-        </div>;
-      })}
+        </div>
+      );})}
     </div>
   </div>;
 }
@@ -468,71 +668,58 @@ function LeadsTable({leads,filters,setFilters,onSelect,onDelete}){
         </select>
       ))}
     </div>
-    {/* Toggle + count */}
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
       <p style={{fontSize:11,color:'var(--t3)',fontWeight:500}}>{fl.length} lead{fl.length!==1?'s':''}</p>
       <div style={{display:'flex',background:'var(--surf2)',borderRadius:8,padding:3,gap:3}}>
         {[{id:'tabla',l:'☰ Tabla'},{id:'tarjetas',l:'⊞ Tarjetas'}].map(({id,l})=>(
-          <button key={id} onClick={()=>setModo(id)} style={{fontSize:11,fontWeight:600,padding:'5px 10px',borderRadius:6,background:modo===id?'var(--surf)':'transparent',color:modo===id?'var(--t1)':'var(--t3)',transition:'all .15s'}}>{l}</button>
+          <button key={id} onClick={()=>setModo(id)} style={{fontSize:11,fontWeight:600,padding:'5px 10px',borderRadius:6,background:modo===id?'var(--surf)':'transparent',color:modo===id?'var(--t1)':'var(--t3)'}}>{l}</button>
         ))}
       </div>
     </div>
-
     {fl.length===0
       ?<div style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:'48px 16px',textAlign:'center',color:'var(--t3)',fontSize:13}}>Sin resultados</div>
       :modo==='tabla'
-        ?/* ── Vista tabla ── */
-          <div style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,overflow:'hidden'}}>
-            {/* Header */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr auto auto auto',padding:'10px 14px',borderBottom:'1px solid var(--bdr)',background:'var(--surf2)'}}>
-              {['Nombre','Etapa','Próximo','Último'].map(h=><span key={h} style={{fontSize:10,fontWeight:700,color:'var(--t3)',textTransform:'uppercase',letterSpacing:'.08em'}}>{h}</span>)}
-            </div>
-            {fl.map((l,i)=>{
-              const s=bs(l.etapa);
-              return<div key={l.id} style={{display:'grid',gridTemplateColumns:'1fr auto auto auto',alignItems:'center',padding:'11px 14px',borderBottom:i<fl.length-1?'1px solid var(--bdr)':'none',cursor:'pointer'}}
-                onClick={()=>onSelect(l.id)}>
-                <div style={{minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:8}}>{l.nombre}</div>
-                  <div style={{display:'flex',gap:6,marginTop:4,flexWrap:'wrap'}}>
-                    {l.instrumento&&<span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:5,background:'#1a2744',color:'#90cdf4'}}>🎷 {l.instrumento}</span>}
-                    {l.servicio&&<span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:5,background:l.servicio==='Refacing'?'#2d1b5c':'#3a2500',color:l.servicio==='Refacing'?'#c4b5fd':'#f6c860'}}>{l.servicio==='Refacing'?'🔧':'✨'} {l.servicio}</span>}
-                  </div>
-                </div>
-                <div style={{padding:'0 8px'}}>
-                  <span style={{fontSize:11,fontWeight:700,padding:'3px 7px',borderRadius:6,background:s.bg,color:s.c,display:'inline-block',whiteSpace:'nowrap'}}>{l.etapa}</span>
-                </div>
-                <div style={{textAlign:'right',fontSize:11,color:isOver(l.prox)?'#fc8181':isToday(l.prox)?'#f6c860':'var(--t3)',fontWeight:isOver(l.prox)||isToday(l.prox)?600:400,minWidth:52,padding:'0 8px'}}>
-                  {l.prox?fmt(l.prox):'—'}
-                  {isOver(l.prox)&&<div style={{fontSize:10}}>Venc.</div>}
-                  {isToday(l.prox)&&<div style={{fontSize:10}}>Hoy</div>}
-                </div>
-                <div style={{textAlign:'right',fontSize:11,color:'var(--t3)',minWidth:52}}>
-                  {l.ultimoContacto?fmt(l.ultimoContacto):'—'}
-                </div>
-              </div>;
-            })}
+        ?<div style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,overflow:'hidden'}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr auto auto auto',padding:'10px 14px',borderBottom:'1px solid var(--bdr)',background:'var(--surf2)'}}>
+            {['Nombre','Etapa','Próximo','Último'].map(h=><span key={h} style={{fontSize:10,fontWeight:700,color:'var(--t3)',textTransform:'uppercase',letterSpacing:'.08em'}}>{h}</span>)}
           </div>
-        :/* ── Vista tarjetas ── */
-          fl.map(l=>(
-            <div key={l.id} style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:14}}>
-              <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
-                <button onClick={()=>onSelect(l.id)} style={{flex:1,textAlign:'left',minWidth:0}}>
-                  <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:7}}>
-                    <EtapaBadge etapa={l.etapa}/>
-                    {isOver(l.prox)&&<span style={{fontSize:11,color:'#fc8181',fontWeight:600}}>⚠ Vencido</span>}
-                    {isToday(l.prox)&&<span style={{fontSize:11,color:'#f6c860',fontWeight:600}}>⏰ Hoy</span>}
-                  </div>
-                  <div style={{fontSize:15,fontWeight:600,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.nombre}</div>
-                  <div style={{fontSize:12,color:'var(--t2)'}}>{[l.instrumento,l.servicio,l.producto].filter(Boolean).join(' · ')}</div>
-                  <div style={{fontSize:11,color:'var(--t3)',marginTop:3}}>{[l.origen,l.tipo,l.prox?fmt(l.prox):null].filter(Boolean).join(' · ')}</div>
-                </button>
-                <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
-                  <button onClick={()=>{if(confirm(`Eliminar ${l.nombre}?`))onDelete(l.id)}} style={{color:'var(--t3)',fontSize:16,padding:4}}>🗑</button>
-                  <span style={{color:'var(--t3)',fontSize:20}}>›</span>
+          {fl.map((l,i)=>{const s=bs(l.etapa);return(
+            <div key={l.id} style={{display:'grid',gridTemplateColumns:'1fr auto auto auto',alignItems:'center',padding:'11px 14px',borderBottom:i<fl.length-1?'1px solid var(--bdr)':'none',cursor:'pointer'}} onClick={()=>onSelect(l.id)}>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:8}}>{l.nombre}</div>
+                <div style={{display:'flex',gap:6,marginTop:4,flexWrap:'wrap'}}>
+                  {l.instrumento&&<span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:5,background:'#1a2744',color:'#90cdf4'}}>🎷 {l.instrumento}</span>}
+                  {l.servicio&&<span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:5,background:l.servicio==='Refacing'?'#2d1b5c':'#3a2500',color:l.servicio==='Refacing'?'#c4b5fd':'#f6c860'}}>{l.servicio==='Refacing'?'🔧':'✨'} {l.servicio}</span>}
                 </div>
               </div>
+              <div style={{padding:'0 8px'}}><span style={{fontSize:11,fontWeight:700,padding:'3px 7px',borderRadius:6,background:s.bg,color:s.c,display:'inline-block',whiteSpace:'nowrap'}}>{l.etapa}</span></div>
+              <div style={{textAlign:'right',fontSize:11,color:isOver(l.prox)?'#fc8181':isToday(l.prox)?'#f6c860':'var(--t3)',fontWeight:isOver(l.prox)||isToday(l.prox)?600:400,minWidth:52,padding:'0 8px'}}>
+                {l.prox?fmt(l.prox):'—'}{isOver(l.prox)&&<div style={{fontSize:10}}>Venc.</div>}{isToday(l.prox)&&<div style={{fontSize:10}}>Hoy</div>}
+              </div>
+              <div style={{textAlign:'right',fontSize:11,color:'var(--t3)',minWidth:52}}>{l.ultimoContacto?fmt(l.ultimoContacto):'—'}</div>
             </div>
-          ))
+          );})}
+        </div>
+        :fl.map(l=>(
+          <div key={l.id} style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:14}}>
+            <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+              <button onClick={()=>onSelect(l.id)} style={{flex:1,textAlign:'left',minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:7}}>
+                  <EtapaBadge etapa={l.etapa}/>
+                  {isOver(l.prox)&&<span style={{fontSize:11,color:'#fc8181',fontWeight:600}}>⚠ Vencido</span>}
+                  {isToday(l.prox)&&<span style={{fontSize:11,color:'#f6c860',fontWeight:600}}>⏰ Hoy</span>}
+                </div>
+                <div style={{fontSize:15,fontWeight:600,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.nombre}</div>
+                <div style={{fontSize:12,color:'var(--t2)'}}>{[l.instrumento,l.servicio,l.producto].filter(Boolean).join(' · ')}</div>
+                <div style={{fontSize:11,color:'var(--t3)',marginTop:3}}>{[l.origen,l.tipo,l.prox?fmt(l.prox):null].filter(Boolean).join(' · ')}</div>
+              </button>
+              <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
+                <button onClick={()=>{if(confirm(`Eliminar ${l.nombre}?`))onDelete(l.id)}} style={{color:'var(--t3)',fontSize:16,padding:4}}>🗑</button>
+                <span style={{color:'var(--t3)',fontSize:20}}>›</span>
+              </div>
+            </div>
+          </div>
+        ))
     }
   </div>;
 }
@@ -545,31 +732,45 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
   const [editing,setEditing]=useState(false);
   const [editData,setEditData]=useState({...lead});
   const [qualifying,setQualifying]=useState(false);
-  const [qual,setQual]=useState('');
 
   useEffect(()=>{setHist(sg(SK.HIST(lead.id),[]));setEditData({...lead});},[lead.id]);
-  const push=items=>{const next=[...items,...hist];setHist(next);ss(SK.HIST(lead.id),next);onUpdate({...lead,ultimoContacto:tod()});};
+
+  const push=items=>{
+    const next=[...items,...hist];setHist(next);ss(SK.HIST(lead.id),next);
+    // Usar fecha real del chat si está disponible
+    const chatItem=items.find(h=>h.tipo==='chat');
+    const uc=chatItem?.ultimoContacto||tod();
+    onUpdate({...lead,ultimoContacto:uc});
+  };
   const addNote=()=>{if(!note.trim())return;push([{id:uid(),ts:new Date().toISOString(),tipo:'nota',text:note.trim()}]);setNote('');};
-  const [autoEtapa,setAutoEtapa]=useState('');
+
   const doQualify=async()=>{
-    if(!settings?.groqKey){setQual('Configurá la key de Groq en ⚙ primero.');return;}
-    const src=hist.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text).join('\n\n---\n\n');
-    if(!src){setQual('Importá el chat primero (tab Importar).');return;}
-    setQualifying(true);setQual('');setAutoEtapa('');
+    if(!settings?.groqKey){alert('Configurá la key de Groq en ⚙ primero.');return;}
+    const src=hist.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text||'').join('\n\n---\n\n');
+    if(!src){alert('Importá el chat primero (tab Importar).');return;}
+    setQualifying(true);
     try{
       const [info,result]=await Promise.all([extractInfo(src,settings.groqKey),qualify(src,settings.groqKey)]);
-      setQual(result);
       const updates={ultimoContacto:tod()};
-      if(info.nombre) updates.nombre=info.nombre;
-      if(info.instrumento) updates.instrumento=info.instrumento;
-      if(info.servicio) updates.servicio=info.servicio;
-      const found=ETAPAS.find(e=>result.includes(e));
-      if(found){updates.etapa=found;setAutoEtapa(found);}
+      if(info.nombre)updates.nombre=info.nombre;
+      if(info.instrumento)updates.instrumento=info.instrumento;
+      if(info.servicio)updates.servicio=info.servicio;
+      const found=ETAPAS.find(e=>result.includes(e));if(found)updates.etapa=found;
+      const proxDate=parseProxDate(result);if(proxDate)updates.prox=proxDate;
       onUpdate({...lead,...updates});
-    }catch(err){setQual(`Error: ${err.message}`);}
+      // Guardar análisis en historial
+      const analisisItem={id:uid(),ts:new Date().toISOString(),tipo:'analisis',text:result};
+      push([analisisItem]);
+      // Notificación
+      if(proxDate){
+        const d=new Date(proxDate+'T09:00:00');const now=new Date();const delay=d-now;
+        if(delay>0)setTimeout(()=>notify('Scaglia CRM — Seguimiento',`${updates.nombre||lead.nombre}: ${updates.etapa||lead.etapa}`),delay);
+      }
+    }catch(err){alert(`Error: ${err.message}`);}
     setQualifying(false);
   };
-  const IC={nota:'📝',chat:'💬',audio:'🎙',error:'⚠️',aviso:'ℹ️'};
+
+  const IC={nota:'📝',chat:'',audio:'🎙',error:'⚠️',aviso:'ℹ️',analisis:'🤖'};
 
   return<div style={{paddingTop:16,display:'flex',flexDirection:'column',gap:14}}>
     {/* Card */}
@@ -584,35 +785,24 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
           <button onClick={()=>{if(confirm(`Eliminar ${lead.nombre}?`))onDelete(lead.id)}} style={{background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:8,padding:'6px 10px',fontSize:14,color:'var(--t3)'}}>🗑</button>
         </div>
       </div>
-
-      {/* Instrumento y servicio — prominentes */}
       {(lead.instrumento||lead.servicio)&&<div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
-        {lead.instrumento&&<span style={{fontSize:14,fontWeight:700,padding:'5px 14px',borderRadius:8,background:'#1a2744',color:'#90cdf4',display:'flex',alignItems:'center',gap:6}}>
-          🎷 {lead.instrumento}
-        </span>}
-        {lead.servicio&&<span style={{fontSize:14,fontWeight:700,padding:'5px 14px',borderRadius:8,
-          background:lead.servicio==='Refacing'?'#2d1b5c':'#3a2500',
-          color:lead.servicio==='Refacing'?'#c4b5fd':'#f6c860',
-          display:'flex',alignItems:'center',gap:6}}>
-          {lead.servicio==='Refacing'?'🔧':'✨'} {lead.servicio}
-        </span>}
+        {lead.instrumento&&<span style={{fontSize:14,fontWeight:700,padding:'5px 14px',borderRadius:8,background:'#1a2744',color:'#90cdf4'}}>🎷 {lead.instrumento}</span>}
+        {lead.servicio&&<span style={{fontSize:14,fontWeight:700,padding:'5px 14px',borderRadius:8,background:lead.servicio==='Refacing'?'#2d1b5c':'#3a2500',color:lead.servicio==='Refacing'?'#c4b5fd':'#f6c860'}}>{lead.servicio==='Refacing'?'🔧':'✨'} {lead.servicio}</span>}
       </div>}
-
       <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:10}}>
         <EtapaBadge etapa={lead.etapa}/>
-        {[lead.origen,lead.tipo].filter(Boolean).map(t=>(
-          <span key={t} className="badge" style={{background:'var(--surf2)',color:'var(--t2)',border:'1px solid var(--bdr)'}}>{t}</span>
-        ))}
+        {[lead.origen,lead.tipo].filter(Boolean).map(t=><span key={t} className="badge" style={{background:'var(--surf2)',color:'var(--t2)',border:'1px solid var(--bdr)'}}>{t}</span>)}
       </div>
       {lead.producto&&<div style={{fontSize:12,color:'var(--gold)',marginTop:10,fontWeight:600}}>📦 {lead.producto}</div>}
-      {lead.prox&&<div style={{display:'flex',alignItems:'center',gap:6,marginTop:10,fontSize:12,color:isOver(lead.prox)?'#fc8181':isToday(lead.prox)?'#f6c860':'var(--t3)'}}>
-        📅 Próximo: {fmt(lead.prox)}{isOver(lead.prox)&&<span style={{fontWeight:700}}>· Vencido</span>}{isToday(lead.prox)&&<span style={{fontWeight:700}}>· Hoy</span>}
-      </div>}
-      {lead.ultimoContacto&&<div style={{fontSize:11,color:'var(--t3)',marginTop:4}}>
-        Último contacto: {fmt(lead.ultimoContacto)}
-      </div>}
+      <div style={{display:'flex',gap:16,marginTop:10,flexWrap:'wrap'}}>
+        {lead.prox&&<div style={{fontSize:12,color:isOver(lead.prox)?'#fc8181':isToday(lead.prox)?'#f6c860':'var(--t3)'}}>
+          📅 Próximo: {fmt(lead.prox)}{isOver(lead.prox)&&<strong> · Vencido</strong>}{isToday(lead.prox)&&<strong> · Hoy</strong>}
+        </div>}
+        {lead.ultimoContacto&&<div style={{fontSize:11,color:'var(--t3)'}}>Último: {fmt(lead.ultimoContacto)}</div>}
+      </div>
       {lead.obs&&<div style={{marginTop:10,fontSize:12,color:'var(--t2)',background:'var(--surf2)',borderRadius:8,padding:'8px 12px',lineHeight:1.7}}>{lead.obs}</div>}
     </div>
+
     {/* Quick edits */}
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
       <div><label className="lbl">Etapa</label>
@@ -624,11 +814,20 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
         <input type="date" value={lead.prox||''} onChange={e=>onUpdate({...lead,prox:e.target.value})} style={{fontSize:12,padding:'8px 10px'}}/>
       </div>
     </div>
-    {/* Tabs */}
+
+    {/* Tabs — sin Calificar */}
     <div className="tabs">
-      {[{id:'hist',l:'Historial'},{id:'import',l:'Importar'},{id:'califica',l:'Calificar'}].map(({id,l})=>(
+      {[{id:'hist',l:'Historial'},{id:'import',l:'Importar'}].map(({id,l})=>(
         <button key={id} onClick={()=>setTab(id)} className={`tab${tab===id?' on':''}`}>{l}</button>
       ))}
+      <button onClick={doQualify} disabled={qualifying} style={{
+        flex:1,padding:'8px 4px',borderRadius:8,fontSize:12,fontWeight:600,
+        background:qualifying?'var(--surf2)':'var(--gold-dim)',
+        color:qualifying?'var(--t3)':'#f6c860',border:'none',
+        display:'flex',alignItems:'center',justifyContent:'center',gap:6
+      }}>
+        {qualifying?<><Spin/>...</>:'🤖 Calificar'}
+      </button>
     </div>
 
     {tab==='hist'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>
@@ -637,14 +836,22 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
         <button onClick={addNote} style={{background:'var(--gold)',color:'#0f0f0f',borderRadius:10,padding:'10px 16px',fontSize:20,fontWeight:700,flexShrink:0}}>+</button>
       </div>
       {hist.length===0
-        ?<div style={{textAlign:'center',padding:'40px 0',color:'var(--t3)',fontSize:13}}>Sin historial — importá el chat o agregá una nota</div>
+        ?<div style={{textAlign:'center',padding:'40px 0',color:'var(--t3)',fontSize:13}}>Sin historial</div>
         :hist.map(h=>(
-          <div key={h.id} className="card" style={{padding:'12px 14px'}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+          <div key={h.id} style={{background:'var(--surf)',border:`1px solid ${h.tipo==='analisis'?'var(--gold-dim)':'var(--bdr)'}`,borderRadius:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px 8px',borderBottom:'1px solid var(--bdr)'}}>
               <span style={{fontSize:14}}>{IC[h.tipo]||'📌'}</span>
               <span style={{fontSize:11,color:'var(--t3)'}}>{new Date(h.ts).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+              {h.tipo==='chat'&&h.mensajes&&<span style={{fontSize:11,color:'var(--t3)',marginLeft:'auto'}}>{h.mensajes.length} mensajes</span>}
             </div>
-            <div style={{fontSize:12,color:'var(--t2)',whiteSpace:'pre-wrap',lineHeight:1.7}}>{h.text}</div>
+            <div style={{padding:'10px 14px'}}>
+              {h.tipo==='chat'&&h.mensajes
+                ?<ChatBubbles mensajes={h.mensajes} leadNombre={lead.nombre}/>
+                :h.tipo==='analisis'
+                  ?<Md t={h.text}/>
+                  :<div style={{fontSize:12,color:'var(--t2)',whiteSpace:'pre-wrap',lineHeight:1.7}}>{h.text}</div>
+              }
+            </div>
           </div>
         ))
       }
@@ -652,30 +859,15 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
 
     {tab==='import'&&<div style={{display:'flex',flexDirection:'column',gap:12}}>
       <div className="card">
+        <DriveImport settings={settings} onImport={items=>{push(items);setTab('hist');}} onName={n=>{if(!lead.nombre)onUpdate({...lead,nombre:n});}} groqKey={settings?.groqKey}/>
         <PasteImport onImport={items=>{push(items);setTab('hist');}} onName={n=>{if(!lead.nombre)onUpdate({...lead,nombre:n});}}/>
       </div>
       <details className="card" style={{padding:0,overflow:'hidden'}}>
         <summary style={{padding:'14px 16px',fontSize:12,color:'var(--t2)',cursor:'pointer'}}>📦 Subir .zip (funciona en PC y navegador del celular)</summary>
-        <div style={{padding:'0 16px 16px',borderTop:'1px solid var(--bdr)'}}>
-          <div style={{height:12}}/>
+        <div style={{padding:'0 16px 16px',borderTop:'1px solid var(--bdr)'}}><div style={{height:12}}/>
           <ZipImport onImport={items=>{push(items);setTab('hist');}} onName={n=>{if(!lead.nombre)onUpdate({...lead,nombre:n});}} groqKey={settings?.groqKey}/>
         </div>
       </details>
-    </div>}
-
-    {tab==='califica'&&<div style={{display:'flex',flexDirection:'column',gap:12}}>
-      <div className="card">
-        <p style={{fontSize:14,fontWeight:600,marginBottom:4}}>🤖 Análisis IA del lead</p>
-        <p style={{fontSize:12,color:'var(--t3)',marginBottom:14,lineHeight:1.6}}>Analiza el chat importado y sugiere etapa y próximo paso. La etapa se aplica automáticamente.</p>
-        <button onClick={doQualify} disabled={qualifying} className="btn-p" style={{opacity:qualifying?.6:1}}>
-          {qualifying?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><Spin/>Analizando…</span>:'Calificar lead'}
-        </button>
-      </div>
-      {autoEtapa&&<div style={{background:'#0f2d1e',border:'1px solid #2d6a4f',borderRadius:12,padding:'10px 14px',display:'flex',alignItems:'center',gap:8}}>
-        <span style={{fontSize:14}}>✓</span>
-        <span style={{fontSize:13,color:'#68d391'}}>Etapa aplicada: <strong>{autoEtapa}</strong></span>
-      </div>}
-      {qual&&<div className="card" style={{borderColor:'var(--gold-dim)'}}><Md t={qual}/></div>}
     </div>}
 
     {editing&&<Sheet title="Editar lead" onClose={()=>setEditing(false)}>
@@ -693,17 +885,37 @@ function App(){
   const [view,setView]=useState('dashboard');
   const [leads,setLeads]=useState(()=>sg(SK.LEADS,[]));
   const [selId,setSelId]=useState(null);
-  const [settings,setSettings]=useState(()=>{const s=sg(SK.SETTINGS,null);if(!s){const d={groqKey:GKEY};ss(SK.SETTINGS,d);return d;}return s;});
+  const [settings,setSettings]=useState(()=>{const s=sg(SK.SETTINGS,null);if(!s){const d={groqKey:GKEY,googleClientId:'64071020848-pbmqlppr8c2lcg7hit8j0gvgu062fg31.apps.googleusercontent.com'};ss(SK.SETTINGS,d);return d;}return s;});
   const [modal,setModal]=useState(null);
   const [filters,setFilters]=useState({q:'',etapa:'',servicio:'',origen:''});
+  const [refreshing,setRefreshing]=useState(false);
+
+  useEffect(()=>{
+    requestNotifs();
+    const urgentes=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido'&&(isOver(l.prox)||isToday(l.prox)));
+    if(urgentes.length>0)setTimeout(()=>notify('Scaglia CRM',`${urgentes.length} seguimiento(s) pendiente(s) hoy`),2000);
+  },[]);
 
   const upsert=lead=>setLeads(prev=>{const idx=prev.findIndex(l=>l.id===lead.id);const next=idx>=0?prev.map((l,i)=>i===idx?lead:l):[...prev,lead];ss(SK.LEADS,next);return next;});
   const remove=id=>setLeads(prev=>{const next=prev.filter(l=>l.id!==id);ss(SK.LEADS,next);return next;});
+
+  const refreshAll=async()=>{
+    if(!settings?.groqKey){alert('Configurá la key de Groq en ⚙ primero.');return;}
+    setRefreshing(true);
+    const activos=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido');
+    for(const lead of activos){
+      try{
+        const res=await runQualifyForLead(lead,settings.groqKey);
+        if(res)upsert({...lead,...res.updates});
+      }catch(e){}
+    }
+    setRefreshing(false);
+  };
+
   const urgentes=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido'&&(isOver(l.prox)||isToday(l.prox)));
   const selLead=leads.find(l=>l.id===selId);
 
   return<div style={{minHeight:'100vh',background:'var(--bg)',fontSize:14}}>
-    {/* Header */}
     <header style={{position:'sticky',top:0,zIndex:20,background:'var(--bg)',borderBottom:'1px solid var(--bdr)',padding:'12px 16px'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',maxWidth:640,margin:'0 auto'}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
@@ -722,33 +934,19 @@ function App(){
         </div>
       </div>
     </header>
-    {/* Nav */}
     <nav style={{borderBottom:'1px solid var(--bdr)',padding:'0 16px',background:'var(--bg)'}}>
       <div style={{display:'flex',maxWidth:640,margin:'0 auto'}}>
         {[{id:'dashboard',l:'Inicio'},{id:'leads',l:`Leads (${leads.length})`}].map(({id,l})=>(
-          <button key={id} onClick={()=>setView(id)} style={{
-            padding:'11px 16px',fontSize:13,fontWeight:500,background:'none',
-            borderBottom:`2px solid ${(view===id||(view==='detail'&&id==='leads'))?'var(--gold)':'transparent'}`,
-            color:(view===id||(view==='detail'&&id==='leads'))?'var(--gold)':'var(--t3)',
-            transition:'all .15s'
-          }}>{l}</button>
+          <button key={id} onClick={()=>setView(id)} style={{padding:'11px 16px',fontSize:13,fontWeight:500,background:'none',borderBottom:`2px solid ${(view===id||(view==='detail'&&id==='leads'))?'var(--gold)':'transparent'}`,color:(view===id||(view==='detail'&&id==='leads'))?'var(--gold)':'var(--t3)',transition:'all .15s'}}>{l}</button>
         ))}
       </div>
     </nav>
-    {/* Content */}
     <main style={{maxWidth:640,margin:'0 auto',padding:'0 16px 100px'}}>
-      {view==='dashboard'&&<Dashboard leads={leads} urgentes={urgentes} onSelect={id=>{setSelId(id);setView('detail');}} onUpdate={upsert}/>}
+      {view==='dashboard'&&<Dashboard leads={leads} urgentes={urgentes} onSelect={id=>{setSelId(id);setView('detail');}} onUpdate={upsert} onRefreshAll={refreshAll} refreshing={refreshing}/>}
       {view==='leads'&&<LeadsTable leads={leads} filters={filters} setFilters={setFilters} onSelect={id=>{setSelId(id);setView('detail');}} onDelete={remove}/>}
       {view==='detail'&&selLead&&<LeadDetail lead={selLead} settings={settings} onUpdate={upsert} onDelete={id=>{remove(id);setView('leads');}}/>}
     </main>
-    {/* FAB */}
-    {view!=='detail'&&<button onClick={()=>setModal('add')} style={{
-      position:'fixed',bottom:24,right:20,
-      background:'var(--gold)',color:'#0f0f0f',borderRadius:'50%',
-      width:56,height:56,fontSize:26,fontWeight:300,
-      boxShadow:`0 4px 20px var(--gold-glow)`,zIndex:10,
-      display:'flex',alignItems:'center',justifyContent:'center'
-    }}>+</button>}
+    {view!=='detail'&&<button onClick={()=>setModal('add')} style={{position:'fixed',bottom:24,right:20,background:'var(--gold)',color:'#0f0f0f',borderRadius:'50%',width:56,height:56,fontSize:26,fontWeight:300,boxShadow:`0 4px 20px var(--gold-glow)`,zIndex:10,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>}
     {modal==='add'&&<LeadModal leads={leads} settings={settings} onSave={l=>{upsert(l);setModal(null);}} onClose={()=>setModal(null)}/>}
     {modal==='settings'&&<SettingsModal settings={settings} onSave={s=>{ss(SK.SETTINGS,s);setSettings(s);setModal(null);}} onClose={()=>setModal(null)}/>}
   </div>;
