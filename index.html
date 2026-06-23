@@ -314,13 +314,17 @@ function buildSrc(hist){
   return hist
     .filter(h=>h.tipo==='chat'||h.tipo==='audio')
     .map(h=>{
-      if(h.tipo==='chat'&&h.mensajes?.length){
-        // Usar mensajes parseados — no el resumen "💬 N mensajes"
-        return h.mensajes.map(m=>`[${m.date} ${m.time}] ${m.who}: ${m.text}`).join('\n');
+      if(h.tipo==='chat'){
+        // Formato nuevo: mensajes parseados
+        if(h.mensajes?.length){
+          return h.mensajes.map(m=>`[${m.date} ${m.time}] ${m.who}: ${m.text}`).join('\n');
+        }
+        // Formato viejo: el texto contiene el preview del chat (hasta 60 msgs)
+        return h.text||'';
       }
       return h.text||'';
     })
-    .filter(Boolean)
+    .filter(s=>s&&s.length>10)
     .join('\n\n---\n\n');
 }
 
@@ -914,22 +918,29 @@ function App(){
   const [refreshProgress,setRefreshProgress]=useState('');
   const refreshAll=async()=>{
     if(!settings?.groqKey){alert('Configurá la key de Groq en ⚙ primero.');return;}
-    setRefreshing(true);
+    setRefreshing(true);setRefreshProgress('Buscando leads con chat…');
     const activos=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido');
-    const conChat=activos.filter(l=>{const h=sg(SK.HIST(l.id),[]);return h.some(i=>i.tipo==='chat'&&i.mensajes?.length);});
-    if(conChat.length===0){setRefreshing(false);alert('No hay leads con chat importado para calificar.');return;}
+    // Aceptar cualquier lead con items de chat o audio, sin importar el formato
+    const conChat=activos.filter(l=>{
+      const h=sg(SK.HIST(l.id),[]);
+      return h.some(i=>i.tipo==='chat'||i.tipo==='audio');
+    });
+    if(conChat.length===0){
+      setRefreshing(false);setRefreshProgress('');
+      alert('Ningún lead tiene chat importado todavía. Importá los chats primero desde la ficha de cada lead.');
+      return;
+    }
     let ok=0;
     for(let i=0;i<conChat.length;i++){
       const lead=conChat[i];
-      setRefreshProgress(`${i+1}/${conChat.length}: ${lead.nombre||'...'}`);
+      setRefreshProgress(`${i+1} de ${conChat.length}: ${lead.nombre||'lead'}`);
       try{
         const res=await runQualifyForLead(lead,settings.groqKey);
         if(res){upsert({...lead,...res.updates});ok++;}
-      }catch(e){}
+      }catch(e){console.error(lead.nombre,e);}
     }
-    setRefreshing(false);
-    setRefreshProgress('');
-    alert(`✓ ${ok} lead(s) actualizados`);
+    setRefreshing(false);setRefreshProgress('');
+    alert(`✓ ${ok} de ${conChat.length} lead(s) actualizados correctamente.`);
   };
 
   const urgentes=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido'&&(isOver(l.prox)||isToday(l.prox)));
