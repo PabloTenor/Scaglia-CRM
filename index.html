@@ -297,7 +297,7 @@ function Sheet({title,onClose,children}){
 }
 
 /* ── LeadModal ── */
-function LeadModal({settings,onSave,onClose}){
+function LeadModal({leads,settings,onSave,onClose}){
   const [data,setData]=useState({id:uid(),nombre:'',telefono:'',instrumento:'',servicio:'',producto:'',origen:'',tipo:'B2C',etapa:'Frío',prox:'',obs:'',createdAt:new Date().toISOString()});
   const [ph,setPh]=useState([]);
   const [qualifying,setQualifying]=useState(false);
@@ -331,7 +331,21 @@ function LeadModal({settings,onSave,onClose}){
     runQualify(items);
   };
 
-  const save=()=>{if(!data.nombre){alert('Ingresá el nombre');return;}if(ph.length)ss(SK.HIST(data.id),ph);onSave(data);};
+  const save=()=>{
+    if(!data.nombre){alert('Ingresá el nombre');return;}
+    // Detección de duplicados
+    const tel=data.telefono?.replace(/\D/g,'');
+    const nombre=data.nombre.toLowerCase().trim();
+    const dupTel=tel&&leads.find(l=>l.telefono?.replace(/\D/g,'')===tel);
+    const dupNombre=!dupTel&&leads.find(l=>l.nombre?.toLowerCase().trim()===nombre);
+    if(dupTel){
+      if(!confirm(`⚠ Ya existe un lead con ese teléfono:\n"${dupTel.nombre}" (${dupTel.etapa})\n\n¿Crear igual?`))return;
+    } else if(dupNombre){
+      if(!confirm(`⚠ Ya existe un lead con ese nombre:\n"${dupNombre.nombre}" (${dupNombre.etapa})\n\n¿Crear igual?`))return;
+    }
+    if(ph.length)ss(SK.HIST(data.id),ph);
+    onSave(data);
+  };
 
   return<Sheet title="Nuevo lead" onClose={onClose}>
     <div style={{background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:12,padding:14,marginBottom:18}}>
@@ -543,11 +557,15 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
     if(!src){setQual('Importá el chat primero (tab Importar).');return;}
     setQualifying(true);setQual('');setAutoEtapa('');
     try{
-      const result=await qualify(src,settings.groqKey);
+      const [info,result]=await Promise.all([extractInfo(src,settings.groqKey),qualify(src,settings.groqKey)]);
       setQual(result);
-      // Auto-aplicar etapa sugerida
+      const updates={ultimoContacto:tod()};
+      if(info.nombre) updates.nombre=info.nombre;
+      if(info.instrumento) updates.instrumento=info.instrumento;
+      if(info.servicio) updates.servicio=info.servicio;
       const found=ETAPAS.find(e=>result.includes(e));
-      if(found){onUpdate({...lead,etapa:found});setAutoEtapa(found);}
+      if(found){updates.etapa=found;setAutoEtapa(found);}
+      onUpdate({...lead,...updates});
     }catch(err){setQual(`Error: ${err.message}`);}
     setQualifying(false);
   };
@@ -731,7 +749,7 @@ function App(){
       boxShadow:`0 4px 20px var(--gold-glow)`,zIndex:10,
       display:'flex',alignItems:'center',justifyContent:'center'
     }}>+</button>}
-    {modal==='add'&&<LeadModal settings={settings} onSave={l=>{upsert(l);setModal(null);}} onClose={()=>setModal(null)}/>}
+    {modal==='add'&&<LeadModal leads={leads} settings={settings} onSave={l=>{upsert(l);setModal(null);}} onClose={()=>setModal(null)}/>}
     {modal==='settings'&&<SettingsModal settings={settings} onSave={s=>{ss(SK.SETTINGS,s);setSettings(s);setModal(null);}} onClose={()=>setModal(null)}/>}
   </div>;
 }
