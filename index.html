@@ -45,6 +45,15 @@ const GKEY='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';
 const sg=(k,fb=null)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}};
 const ss=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
 
+/* ── Markdown renderer (básico) ── */
+function Md({text}){
+  const html=text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#fbbf24">$1</strong>')
+    .replace(/\n/g,'<br>');
+  return <div dangerouslySetInnerHTML={{__html:html}} className="text-gray-200 text-xs leading-relaxed"/>;
+}
+
 /* ── Utils ── */
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 const tod=()=>new Date().toISOString().split('T')[0];
@@ -79,12 +88,21 @@ async function qualify(content,key){
   const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},
     body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:800,messages:[{role:'user',content:
-`Sos el asistente de ventas de Scaglia Mouthpieces (Buenos Aires, boquillas HR saxofón, USD 400). Respondé conciso:
+`Sos el asistente de ventas de Scaglia Mouthpieces (Buenos Aires). Analizá esta conversación y respondé con este formato exacto:
 
-**1. Qué quiere** — instrumento, producto (Kaus/Pegasus/Tempra L/Tempra M/Flores/Floresta) o refacing (USD 100–150), presupuesto si se mencionó.
-**2. Temperatura** — caliente / tibio / frío y por qué.
-**3. Etapa sugerida** — una de: Frío, Potencial, Propuesta enviada, Seguimiento 1, Seguimiento 2, Seguimiento 3, Ganado, Perdido.
-**4. Próximo paso** — qué hacer y cuándo.
+**1. Qué quiere**
+Instrumento, producto o refacing, apertura, presupuesto mencionado.
+
+**2. Temperatura**
+Caliente / Tibio / Frío — explicá brevemente por qué.
+
+**3. Etapa sugerida**
+Elegí UNA de estas opciones exactas: Frío | Potencial | Propuesta enviada | Seguimiento 1 | Seguimiento 2 | Seguimiento 3 | Ganado | Perdido
+
+**4. Próximo paso**
+Acción concreta y cuándo hacerla.
+
+Productos Scaglia: Kaus, Pegasus (línea PULSE) — Tempra L, Tempra M, Flores, Floresta (línea AURA). Boquilla HR: USD 400. Refacing: USD 100–150.
 
 Conversación:
 ${content.slice(0,4500)}`}]})
@@ -417,7 +435,7 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
               {qualifying?'Analizando…':'Calificar lead'}
             </button>
           </div>
-          {qual&&<div className="bg-gray-800 border rounded-xl p-4 text-gray-200 text-xs whitespace-pre-wrap leading-relaxed" style={{borderColor:'#92400e'}}>{qual}</div>}
+          {qual&&<div className="bg-gray-800 border rounded-xl p-4" style={{borderColor:'#92400e'}}><Md text={qual}/></div>}
         </div>
       )}
 
