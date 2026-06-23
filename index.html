@@ -279,13 +279,50 @@ function Sheet({title,onClose,children}){
 function LeadModal({settings,onSave,onClose}){
   const [data,setData]=useState({id:uid(),nombre:'',telefono:'',instrumento:'',servicio:'',producto:'',origen:'',tipo:'B2C',etapa:'Frío',prox:'',obs:'',createdAt:new Date().toISOString()});
   const [ph,setPh]=useState([]);
+  const [qualifying,setQualifying]=useState(false);
+  const [qualResult,setQualResult]=useState('');
+  const [qualEtapa,setQualEtapa]=useState('');
+
+  const runQualify=async(items)=>{
+    if(!settings?.groqKey) return;
+    const src=items.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text).join('\n\n---\n\n');
+    if(!src) return;
+    setQualifying(true);
+    try{
+      const result=await qualify(src,settings.groqKey);
+      setQualResult(result);
+      const found=ETAPAS.find(e=>result.includes(e));
+      if(found){setData(d=>({...d,etapa:found}));setQualEtapa(found);}
+    }catch(e){setQualResult(`Error al calificar: ${e.message}`);}
+    setQualifying(false);
+  };
+
+  const handleImport=items=>{
+    setPh(p=>[...items,...p]);
+    runQualify(items);
+  };
+
   const save=()=>{if(!data.nombre){alert('Ingresá el nombre');return;}if(ph.length)ss(SK.HIST(data.id),ph);onSave(data);};
+
   return<Sheet title="Nuevo lead" onClose={onClose}>
     <div style={{background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:12,padding:14,marginBottom:18}}>
-      <p className="stitle">Importar chat (opcional · rellena el nombre)</p>
-      <PasteImport onImport={items=>setPh(p=>[...items,...p])} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))}/>
-      <ZipImport onImport={items=>setPh(p=>[...items,...p])} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))} groqKey={settings?.groqKey}/>
+      <p className="stitle">Importar chat · la IA califica automáticamente</p>
+      <PasteImport onImport={handleImport} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))}/>
+      <ZipImport onImport={handleImport} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))} groqKey={settings?.groqKey}/>
     </div>
+
+    {/* Qualification status */}
+    {qualifying&&<div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:12,marginBottom:14}}>
+      <Spin/><span style={{color:'var(--gold)',fontSize:12,fontWeight:500}}>Calificando lead con IA…</span>
+    </div>}
+    {qualEtapa&&!qualifying&&<div style={{padding:'10px 14px',background:'#0f2d1e',border:'1px solid #2d6a4f',borderRadius:12,marginBottom:8,display:'flex',alignItems:'center',gap:8}}>
+      <span>✓</span><span style={{color:'#68d391',fontSize:12,fontWeight:600}}>Etapa sugerida aplicada: {qualEtapa}</span>
+    </div>}
+    {qualResult&&!qualifying&&<details style={{background:'var(--surf2)',border:'1px solid var(--gold-dim)',borderRadius:12,marginBottom:14,overflow:'hidden'}}>
+      <summary style={{padding:'10px 14px',fontSize:12,color:'var(--gold)',cursor:'pointer',fontWeight:500}}>Ver análisis completo ▾</summary>
+      <div style={{padding:'0 14px 14px',borderTop:'1px solid var(--bdr)'}}><div style={{height:10}}/><Md t={qualResult}/></div>
+    </details>}
+
     <LeadForm data={data} onChange={setData}/>
     <div style={{display:'flex',gap:10,marginTop:18,paddingBottom:4}}>
       <button className="btn-s" onClick={onClose}>Cancelar</button>
