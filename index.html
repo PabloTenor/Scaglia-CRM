@@ -127,14 +127,32 @@ async function transcribeAudio(blob,fname,key){
   const r=await fetch('https://api.groq.com/openai/v1/audio/transcriptions',{method:'POST',headers:{Authorization:`Bearer ${key}`},body:fd});
   if(!r.ok)throw new Error(`Groq ${r.status}`);return r.text();
 }
+
+async function extractInfo(src,key){
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},
+    body:JSON.stringify({model:'llama-3.1-8b-instant',max_tokens:200,messages:[{role:'user',content:
+`Analizá esta conversación de WhatsApp y extraé los datos. Respondé SOLO con JSON válido, sin texto extra ni backticks:
+
+{"nombre":"nombre del contacto o null","instrumento":"Alto|Tenor|Barítono|Soprano|Contralto|Otro o null","servicio":"Boquilla nueva|Refacing o null","boquilla_actual":"marca modelo o null","apertura":"número apertura o null"}
+
+Conversación:
+${src.slice(0,2500)}`}]})
+  });
+  if(!r.ok)return{};
+  const d=await r.json();
+  const t=d.choices?.[0]?.message?.content||'{}';
+  try{return JSON.parse(t.replace(/```json|```/g,'').trim());}catch{return{};}
+}
+
 async function qualify(src,key){
   const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},
-    body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:800,messages:[{role:'user',content:
+    body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:900,messages:[{role:'user',content:
 `Sos el asistente de ventas de Scaglia Mouthpieces (Buenos Aires). Analizá esta conversación y respondé con este formato exacto:
 
 **1. Qué quiere**
-Instrumento, producto o refacing, apertura, presupuesto mencionado.
+Instrumento, producto o refacing, apertura, boquilla actual, presupuesto si se mencionó.
 
 **2. Temperatura**
 Caliente / Tibio / Frío — por qué en una línea.
@@ -144,6 +162,9 @@ Elegí UNA: Frío | Potencial | Propuesta enviada | Seguimiento 1 | Seguimiento 
 
 **4. Próximo paso**
 Acción concreta y cuándo.
+
+**5. Mensaje sugerido**
+Escribí el mensaje exacto de WhatsApp a mandarle ahora mismo. Tono natural y argentino, máximo 3 líneas. Entre comillas.
 
 Productos: Kaus, Pegasus (PULSE) · Tempra L, Tempra M, Flores, Floresta (AURA). Boquilla HR: USD 400. Refacing: USD 100–150.
 
@@ -289,7 +310,14 @@ function LeadModal({settings,onSave,onClose}){
     if(!src) return;
     setQualifying(true);
     try{
-      const result=await qualify(src,settings.groqKey);
+      const [info,result]=await Promise.all([extractInfo(src,settings.groqKey),qualify(src,settings.groqKey)]);
+      // Auto-fill extracted fields
+      setData(d=>({
+        ...d,
+        nombre:      d.nombre      || info.nombre      || d.nombre,
+        instrumento: d.instrumento || info.instrumento || d.instrumento,
+        servicio:    d.servicio    || info.servicio    || d.servicio,
+      }));
       setQualResult(result);
       const found=ETAPAS.find(e=>result.includes(e));
       if(found){setData(d=>({...d,etapa:found}));setQualEtapa(found);}
@@ -446,16 +474,19 @@ function LeadsTable({leads,filters,setFilters,onSelect,onDelete}){
             </div>
             {fl.map((l,i)=>{
               const s=bs(l.etapa);
-              return<div key={l.id} style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',alignItems:'center',padding:'11px 14px',borderBottom:i<fl.length-1?'1px solid var(--bdr)':'none',cursor:'pointer'}}
+              return<div key={l.id} style={{display:'grid',gridTemplateColumns:'1fr auto auto',alignItems:'center',padding:'11px 14px',borderBottom:i<fl.length-1?'1px solid var(--bdr)':'none',cursor:'pointer'}}
                 onClick={()=>onSelect(l.id)}>
                 <div style={{minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:8}}>{l.nombre}</div>
-                  <div style={{fontSize:11,color:'var(--t2)',marginTop:2}}>{[l.instrumento,l.servicio].filter(Boolean).join(' · ')}</div>
+                  <div style={{display:'flex',gap:6,marginTop:4,flexWrap:'wrap'}}>
+                    {l.instrumento&&<span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:5,background:'#1a2744',color:'#90cdf4'}}>🎷 {l.instrumento}</span>}
+                    {l.servicio&&<span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:5,background:l.servicio==='Refacing'?'#2d1b5c':'#3a2500',color:l.servicio==='Refacing'?'#c4b5fd':'#f6c860'}}>{l.servicio==='Refacing'?'🔧':'✨'} {l.servicio}</span>}
+                  </div>
                 </div>
-                <div>
-                  <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:6,background:s.bg,color:s.c,display:'inline-block'}}>{l.etapa}</span>
+                <div style={{padding:'0 10px'}}>
+                  <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:6,background:s.bg,color:s.c,display:'inline-block',whiteSpace:'nowrap'}}>{l.etapa}</span>
                 </div>
-                <div style={{textAlign:'right',fontSize:11,color:isOver(l.prox)?'#fc8181':isToday(l.prox)?'#f6c860':'var(--t3)',fontWeight:isOver(l.prox)||isToday(l.prox)?600:400}}>
+                <div style={{textAlign:'right',fontSize:11,color:isOver(l.prox)?'#fc8181':isToday(l.prox)?'#f6c860':'var(--t3)',fontWeight:isOver(l.prox)||isToday(l.prox)?600:400,minWidth:60}}>
                   {l.prox?fmt(l.prox):'—'}
                   {isOver(l.prox)&&<div style={{fontSize:10}}>Vencido</div>}
                   {isToday(l.prox)&&<div style={{fontSize:10}}>Hoy</div>}
@@ -531,9 +562,23 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
           <button onClick={()=>{if(confirm(`Eliminar ${lead.nombre}?`))onDelete(lead.id)}} style={{background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:8,padding:'6px 10px',fontSize:14,color:'var(--t3)'}}>🗑</button>
         </div>
       </div>
-      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:12}}>
+
+      {/* Instrumento y servicio — prominentes */}
+      {(lead.instrumento||lead.servicio)&&<div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
+        {lead.instrumento&&<span style={{fontSize:14,fontWeight:700,padding:'5px 14px',borderRadius:8,background:'#1a2744',color:'#90cdf4',display:'flex',alignItems:'center',gap:6}}>
+          🎷 {lead.instrumento}
+        </span>}
+        {lead.servicio&&<span style={{fontSize:14,fontWeight:700,padding:'5px 14px',borderRadius:8,
+          background:lead.servicio==='Refacing'?'#2d1b5c':'#3a2500',
+          color:lead.servicio==='Refacing'?'#c4b5fd':'#f6c860',
+          display:'flex',alignItems:'center',gap:6}}>
+          {lead.servicio==='Refacing'?'🔧':'✨'} {lead.servicio}
+        </span>}
+      </div>}
+
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:10}}>
         <EtapaBadge etapa={lead.etapa}/>
-        {[lead.instrumento,lead.servicio,lead.origen,lead.tipo].filter(Boolean).map(t=>(
+        {[lead.origen,lead.tipo].filter(Boolean).map(t=>(
           <span key={t} className="badge" style={{background:'var(--surf2)',color:'var(--t2)',border:'1px solid var(--bdr)'}}>{t}</span>
         ))}
       </div>
