@@ -3,28 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0d0d0d">
+<meta name="theme-color" content="#0f0f0f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Scaglia CRM">
 <title>Scaglia CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <style>
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;background:#111827;color:#f3f4f6;font-family:system-ui,sans-serif}
-  ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#374151;border-radius:2px}
-  details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
-  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1)}
+:root{
+  --bg:#0f0f0f;--surf:#171717;--surf2:#1f1f1f;
+  --bdr:#272727;--bdr2:#353535;
+  --gold:#c49a2a;--gold-dim:#8a6b1a;--gold-glow:rgba(196,154,42,0.35);
+  --t1:#ede9e0;--t2:#9a9088;--t3:#5a5550;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.6)}
+a{text-decoration:none}
+/* Base inputs */
+input,select,textarea{
+  background:var(--surf2);border:1px solid var(--bdr);border-radius:10px;
+  color:var(--t1);font-family:'Inter',system-ui,sans-serif;font-size:13px;
+  padding:10px 13px;width:100%;outline:none;transition:border-color .15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+input::placeholder,textarea::placeholder{color:var(--t3)}
+select option{background:var(--surf2)}
+button{font-family:'Inter',system-ui,sans-serif;cursor:pointer;border:none;outline:none;background:none}
+/* Buttons */
+.btn-p{background:var(--gold);color:#0f0f0f;font-weight:700;border-radius:10px;padding:13px;font-size:14px;width:100%;transition:opacity .15s;letter-spacing:.01em}
+.btn-p:active{opacity:.8}
+.btn-s{background:var(--surf2);color:var(--t2);border:1px solid var(--bdr);border-radius:10px;padding:13px;font-size:14px;width:100%}
+/* Cards */
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:16px}
+/* Badges */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;letter-spacing:.03em}
+/* Labels */
+.lbl{display:block;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;display:flex;align-items:flex-end;backdrop-filter:blur(3px)}
+.sheet{background:var(--surf);border-radius:20px 20px 0 0;padding:8px 16px 20px;width:100%;max-width:640px;margin:0 auto;max-height:92vh;overflow-y:auto}
+.handle{width:36px;height:4px;background:var(--bdr2);border-radius:2px;margin:0 auto 18px}
+/* Tabs */
+.tabs{display:flex;background:var(--surf2);border-radius:12px;padding:4px;gap:3px}
+.tab{flex:1;padding:8px 4px;border-radius:8px;font-size:12px;font-weight:500;background:transparent;color:var(--t3);transition:all .15s}
+.tab.on{background:var(--surf);color:var(--t1);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+/* Spin */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .8s linear infinite}
+/* Section titles */
+.stitle{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const {useState,useEffect,useRef} = React;
+const {useState,useEffect,useRef}=React;
 
 /* ── Constants ── */
 const ETAPAS=['Frío','Potencial','Propuesta enviada','Seguimiento 1','Seguimiento 2','Seguimiento 3','Ganado','Perdido'];
@@ -32,11 +73,15 @@ const INSTRUMENTOS=['Alto','Tenor','Barítono','Soprano','Contralto','Otro'];
 const PRODUCTOS=['Kaus','Pegasus','Tempra L','Tempra M','Flores','Floresta'];
 const ORIGENES=['Instagram','WhatsApp','Referido','Feria','Endorser'];
 const SERVICIOS=['Boquilla nueva','Refacing'];
-const EC={
-  'Frío':'bg-blue-900 text-blue-300','Potencial':'bg-violet-900 text-violet-300',
-  'Propuesta enviada':'bg-yellow-900 text-yellow-300','Seguimiento 1':'bg-orange-900 text-orange-300',
-  'Seguimiento 2':'bg-orange-900 text-orange-300','Seguimiento 3':'bg-red-900 text-red-300',
-  'Ganado':'bg-green-900 text-green-300','Perdido':'bg-gray-700 text-gray-400',
+const BADGE_STYLE={
+  'Frío':            {bg:'#162140',c:'#90cdf4'},
+  'Potencial':       {bg:'#241854',c:'#c4b5fd'},
+  'Propuesta enviada':{bg:'#3a2500',c:'#f6c860'},
+  'Seguimiento 1':   {bg:'#3a1800',c:'#fbd38d'},
+  'Seguimiento 2':   {bg:'#3a1800',c:'#fbd38d'},
+  'Seguimiento 3':   {bg:'#3a0a0a',c:'#fc8181'},
+  'Ganado':          {bg:'#0f2d1e',c:'#68d391'},
+  'Perdido':         {bg:'#1a1a1a',c:'#5a5550'},
 };
 const SK={LEADS:'sc-leads',SETTINGS:'sc-settings',HIST:id=>`sc-hist-${id}`};
 const GKEY='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';
@@ -45,21 +90,20 @@ const GKEY='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';
 const sg=(k,fb=null)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}};
 const ss=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
 
-/* ── Markdown renderer (básico) ── */
-function Md({text}){
-  const html=text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#fbbf24">$1</strong>')
-    .replace(/\n/g,'<br>');
-  return <div dangerouslySetInnerHTML={{__html:html}} className="text-gray-200 text-xs leading-relaxed"/>;
-}
-
 /* ── Utils ── */
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 const tod=()=>new Date().toISOString().split('T')[0];
 const isOver=d=>!!d&&d<tod();
 const isToday=d=>!!d&&d===tod();
 const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+
+/* ── Markdown ── */
+function Md({t}){
+  const h=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--gold)">$1</strong>')
+    .replace(/\n/g,'<br>');
+  return <div dangerouslySetInnerHTML={{__html:h}} style={{color:'var(--t1)',fontSize:13,lineHeight:1.8}}/>;
+}
 
 /* ── WA parser ── */
 function parseWA(text){
@@ -81,10 +125,9 @@ async function transcribeAudio(blob,fname,key){
   fd.append('file',new File([blob],fname,{type:mime}));
   fd.append('model','whisper-large-v3');fd.append('language','es');fd.append('response_format','text');
   const r=await fetch('https://api.groq.com/openai/v1/audio/transcriptions',{method:'POST',headers:{Authorization:`Bearer ${key}`},body:fd});
-  if(!r.ok)throw new Error(`Groq ${r.status}`);
-  return r.text();
+  if(!r.ok)throw new Error(`Groq ${r.status}`);return r.text();
 }
-async function qualify(content,key){
+async function qualify(src,key){
   const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},
     body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:800,messages:[{role:'user',content:
@@ -94,109 +137,141 @@ async function qualify(content,key){
 Instrumento, producto o refacing, apertura, presupuesto mencionado.
 
 **2. Temperatura**
-Caliente / Tibio / Frío — explicá brevemente por qué.
+Caliente / Tibio / Frío — por qué en una línea.
 
 **3. Etapa sugerida**
-Elegí UNA de estas opciones exactas: Frío | Potencial | Propuesta enviada | Seguimiento 1 | Seguimiento 2 | Seguimiento 3 | Ganado | Perdido
+Elegí UNA: Frío | Potencial | Propuesta enviada | Seguimiento 1 | Seguimiento 2 | Seguimiento 3 | Ganado | Perdido
 
 **4. Próximo paso**
-Acción concreta y cuándo hacerla.
+Acción concreta y cuándo.
 
-Productos Scaglia: Kaus, Pegasus (línea PULSE) — Tempra L, Tempra M, Flores, Floresta (línea AURA). Boquilla HR: USD 400. Refacing: USD 100–150.
+Productos: Kaus, Pegasus (PULSE) · Tempra L, Tempra M, Flores, Floresta (AURA). Boquilla HR: USD 400. Refacing: USD 100–150.
 
 Conversación:
-${content.slice(0,4500)}`}]})
+${src.slice(0,4500)}`}]})
   });
   if(!r.ok)throw new Error(`Groq ${r.status}`);
-  const d=await r.json();
-  return d.choices?.[0]?.message?.content||'Sin respuesta.';
+  const d=await r.json();return d.choices?.[0]?.message?.content||'Sin respuesta.';
 }
+
+/* ── EtapaBadge ── */
+function EtapaBadge({etapa}){
+  const s=BADGE_STYLE[etapa]||{bg:'#1a1a1a',c:'#5a5550'};
+  return <span className="badge" style={{background:s.bg,color:s.c}}>{etapa}</span>;
+}
+
+/* ── Spinner ── */
+function Spin(){return<div className="spin" style={{width:16,height:16,border:'2px solid var(--gold)',borderTopColor:'transparent',borderRadius:'50%',flexShrink:0}}/>;}
 
 /* ── ZipImport ── */
 function ZipImport({onImport,onName,groqKey}){
-  const [st,setSt]=useState('idle'); // idle | loading | done | error
-  const [msg,setMsg]=useState('');
+  const [st,setSt]=useState('idle');const [msg,setMsg]=useState('');
   const handle=async e=>{
     const file=e.target.files?.[0];if(!file)return;e.target.value='';
-    setSt('loading');setMsg('Abriendo ZIP…');
+    setSt('load');setMsg('Abriendo ZIP…');
     try{
       const zip=await JSZip.loadAsync(file);const items=[];
       const tk=Object.keys(zip.files).find(k=>k.endsWith('.txt')&&!zip.files[k].dir);
       if(tk){setMsg('Procesando chat…');
-        const content=await zip.files[tk].async('string');
-        const msgs=parseWA(content);
+        const c=await zip.files[tk].async('string');const msgs=parseWA(c);
         if(msgs.length>0){
           const name=guessName(msgs);if(name&&onName)onName(name);
           const prev=msgs.slice(0,60).map(m=>`[${m.date} ${m.time}] ${m.who}: ${m.text}`).join('\n');
-          items.push({id:uid(),ts:new Date().toISOString(),tipo:'chat',text:`💬 ${msgs.length} mensajes de WhatsApp\n\n${prev}${msgs.length>60?`\n…(${msgs.length-60} más)`:''}`});
+          items.push({id:uid(),ts:new Date().toISOString(),tipo:'chat',text:`💬 ${msgs.length} mensajes\n\n${prev}${msgs.length>60?`\n…(${msgs.length-60} más)`:''}`});
         }
       }
       const ak=Object.keys(zip.files).filter(k=>!zip.files[k].dir&&/\.(ogg|opus|mp3|m4a|wav)$/i.test(k));
-      if(ak.length>0&&!groqKey){
-        items.push({id:uid(),ts:new Date().toISOString(),tipo:'aviso',text:`🎙 ${ak.length} audio(s) encontrados. Configurá la key de Groq en ⚙ para transcribirlos.`});
-      } else {
-        for(let i=0;i<ak.length;i++){
-          const k=ak[i];const fname=k.split('/').pop();
-          setMsg(`Transcribiendo ${i+1}/${ak.length}: ${fname}`);
-          try{const blob=await zip.files[k].async('blob');const t=await transcribeAudio(blob,fname,groqKey);
-            items.push({id:uid(),ts:new Date().toISOString(),tipo:'audio',text:`🎙 ${fname}\n${t}`});
-          }catch(err){items.push({id:uid(),ts:new Date().toISOString(),tipo:'error',text:`⚠ Error en ${fname}: ${err.message}`});}
-        }
-      }
+      if(ak.length>0&&!groqKey){items.push({id:uid(),ts:new Date().toISOString(),tipo:'aviso',text:`🎙 ${ak.length} audio(s). Configurá la key de Groq en ⚙ para transcribirlos.`});}
+      else{for(let i=0;i<ak.length;i++){
+        const k=ak[i];const fname=k.split('/').pop();
+        setMsg(`Transcribiendo ${i+1}/${ak.length}: ${fname}`);
+        try{const blob=await zip.files[k].async('blob');const t=await transcribeAudio(blob,fname,groqKey);
+          items.push({id:uid(),ts:new Date().toISOString(),tipo:'audio',text:`🎙 ${fname}\n${t}`});
+        }catch(err){items.push({id:uid(),ts:new Date().toISOString(),tipo:'error',text:`⚠ Error en ${fname}: ${err.message}`});}
+      }}
       if(items.length){onImport(items);setSt('done');setMsg(`✓ ${items.length} elemento(s) importados`);}
-      else{setSt('error');setMsg('No se encontró contenido en el ZIP.');}
-    }catch(err){setSt('error');setMsg(`Error: ${err.message}`);}
+      else{setSt('err');setMsg('No se encontró contenido en el ZIP.');}
+    }catch(err){setSt('err');setMsg(`Error: ${err.message}`);}
   };
-  if(st==='loading')return<div className="flex items-center gap-2 py-2"><div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin shrink-0"/><span className="text-yellow-400 text-xs">{msg}</span></div>;
-  if(st==='done')return<div className="flex items-center justify-between"><span className="text-green-400 text-xs">{msg}</span><div style={{position:'relative',overflow:'hidden',display:'inline-block',borderRadius:'6px'}}><span className="text-gray-500 text-xs underline px-2 py-1 block">Cambiar</span><input type="file" accept=".zip" onChange={handle} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:0,cursor:'pointer'}}/></div></div>;
-  return(
-    <div>
-      {st==='error'&&<p className="text-red-400 text-xs mb-2">{msg}</p>}
-      <div style={{position:'relative',overflow:'hidden',borderRadius:'12px'}}>
-        <div className="w-full bg-gray-700 text-gray-300 py-3 rounded-xl flex items-center justify-center gap-2 text-sm pointer-events-none">📦 Seleccionar .zip de WhatsApp</div>
-        <input type="file" accept=".zip,application/zip" onChange={handle} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:0,cursor:'pointer'}}/>
-      </div>
+  if(st==='load')return<div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0'}}><Spin/><span style={{color:'var(--gold)',fontSize:12}}>{msg}</span></div>;
+  if(st==='done')return<div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+    <span style={{color:'#68d391',fontSize:12}}>{msg}</span>
+    <div style={{position:'relative',overflow:'hidden',borderRadius:8}}>
+      <span style={{fontSize:12,color:'var(--t3)',padding:'4px 8px',display:'block',textDecoration:'underline'}}>Cambiar</span>
+      <input type="file" accept=".zip" onChange={handle} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:0,cursor:'pointer'}}/>
     </div>
-  );
+  </div>;
+  return<div>
+    {st==='err'&&<p style={{color:'#fc8181',fontSize:12,marginBottom:8}}>{msg}</p>}
+    <div style={{position:'relative',overflow:'hidden',borderRadius:10}}>
+      <div style={{padding:'12px 14px',background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:13,color:'var(--t2)',pointerEvents:'none'}}>
+        📦 Seleccionar .zip de WhatsApp
+      </div>
+      <input type="file" accept=".zip,application/zip" onChange={handle} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:0,cursor:'pointer'}}/>
+    </div>
+  </div>;
 }
 
 /* ── PasteImport ── */
-function PasteImport({onImport,onName,compact}){
+function PasteImport({onImport,onName}){
   const [text,setText]=useState('');const [err,setErr]=useState('');const [done,setDone]=useState(false);
   const go=()=>{
     if(!text.trim())return;
     const msgs=parseWA(text.trim());
-    if(!msgs.length){setErr('No se reconoció el formato. Exportá sin multimedia y pegá el .txt completo.');return;}
+    if(!msgs.length){setErr('No se reconoció el formato. Exportá el chat y pegá el contenido completo del .txt.');return;}
     const name=guessName(msgs);if(name&&onName)onName(name);
     const prev=msgs.slice(0,60).map(m=>`[${m.date} ${m.time}] ${m.who}: ${m.text}`).join('\n');
-    onImport([{id:uid(),ts:new Date().toISOString(),tipo:'chat',text:`💬 ${msgs.length} mensajes de WhatsApp\n\n${prev}${msgs.length>60?`\n…(${msgs.length-60} más)`:''}`}]);
+    onImport([{id:uid(),ts:new Date().toISOString(),tipo:'chat',text:`💬 ${msgs.length} mensajes\n\n${prev}${msgs.length>60?`\n…(${msgs.length-60} más)`:''}`}]);
     setDone(true);setText('');
   };
-  if(done)return<div className={`bg-gray-800 border border-green-900 rounded-xl p-3 flex items-center justify-between ${compact?'mb-3':''}`}><span className="text-green-400 text-xs">✓ Chat importado</span><button onClick={()=>setDone(false)} className="text-gray-500 text-xs underline">Pegar otro</button></div>;
-  return(
-    <div className={`bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-3 ${compact?'mb-4':''}`}>
-      <p className="text-gray-300 text-xs font-medium">💬 Pegar texto del chat</p>
-      <p className="text-gray-500 text-xs leading-relaxed">WhatsApp → chat → ⋮ → Más → Exportar → Sin multimedia → abrí el .txt → copiá todo → pegá acá.</p>
-      <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Pegá el chat acá…" rows={4}
-        className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-white placeholder-gray-600 text-xs focus:outline-none resize-none"/>
-      {err&&<p className="text-red-400 text-xs">{err}</p>}
-      <button onClick={go} disabled={!text.trim()} className="w-full py-3 rounded-xl text-sm font-medium text-white" style={{background:text.trim()?'#d97706':'#374151'}}>Importar chat</button>
-    </div>
-  );
+  if(done)return<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#0f2d1e',border:'1px solid #2d6a4f',borderRadius:10,marginBottom:12}}>
+    <span style={{color:'#68d391',fontSize:12}}>✓ Chat importado</span>
+    <button onClick={()=>setDone(false)} style={{color:'var(--t3)',fontSize:12,textDecoration:'underline'}}>Pegar otro</button>
+  </div>;
+  return<div style={{marginBottom:16}}>
+    <p style={{fontSize:12,color:'var(--t2)',fontWeight:500,marginBottom:6}}>💬 Pegar texto del chat</p>
+    <p style={{fontSize:11,color:'var(--t3)',marginBottom:10,lineHeight:1.6}}>WhatsApp → chat → ⋮ → Más → Exportar → Sin multimedia → abrí el .txt → copiá todo → pegá acá.</p>
+    <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Pegá el chat acá…" rows={4} style={{resize:'none',marginBottom:8}}/>
+    {err&&<p style={{color:'#fc8181',fontSize:11,marginBottom:8}}>{err}</p>}
+    <button onClick={go} disabled={!text.trim()} className="btn-p" style={{opacity:text.trim()?1:.4}}>Importar chat</button>
+  </div>;
 }
 
 /* ── LeadForm ── */
 function LeadForm({data,onChange}){
   const u=(k,v)=>onChange({...data,[k]:v});
-  const sel=(k,lb,opts)=><div key={k}><label className="text-gray-500 text-xs block mb-1">{lb}</label><select value={data[k]||''} onChange={e=>u(k,e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none"><option value="">— seleccionar —</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select></div>;
-  const inp=(k,lb,t)=><div key={k}><label className="text-gray-500 text-xs block mb-1">{lb}</label><input type={t||'text'} value={data[k]||''} onChange={e=>u(k,e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none"/></div>;
-  const ta=(k,lb)=><div key={k}><label className="text-gray-500 text-xs block mb-1">{lb}</label><textarea value={data[k]||''} onChange={e=>u(k,e.target.value)} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none resize-none"/></div>;
-  return<div className="space-y-3">
-    {inp('nombre','Nombre *')}{inp('telefono','Teléfono (5491112345678)')}
-    {sel('instrumento','Instrumento',INSTRUMENTOS)}{sel('servicio','Servicio',SERVICIOS)}
-    {sel('producto','Producto (si aplica)',['',...PRODUCTOS])}{sel('origen','Origen',ORIGENES)}
-    {sel('tipo','Tipo',['B2C','B2B'])}{sel('etapa','Etapa',ETAPAS)}
-    {inp('prox','Próximo contacto','date')}{ta('obs','Observaciones')}
+  const Sel=({l,k,opts})=><div><label className="lbl">{l}</label><select value={data[k]||''} onChange={e=>u(k,e.target.value)}><option value="">—</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select></div>;
+  const Inp=({l,k,t})=><div><label className="lbl">{l}</label><input type={t||'text'} value={data[k]||''} onChange={e=>u(k,e.target.value)}/></div>;
+  const Ta=({l,k})=><div><label className="lbl">{l}</label><textarea value={data[k]||''} onChange={e=>u(k,e.target.value)} rows={2} style={{resize:'none'}}/></div>;
+  return<div style={{display:'flex',flexDirection:'column',gap:13}}>
+    <Inp l="Nombre *" k="nombre"/>
+    <Inp l="Teléfono (5491112345678)" k="telefono"/>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <Sel l="Instrumento" k="instrumento" opts={INSTRUMENTOS}/>
+      <Sel l="Tipo" k="tipo" opts={['B2C','B2B']}/>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <Sel l="Servicio" k="servicio" opts={SERVICIOS}/>
+      <Sel l="Origen" k="origen" opts={ORIGENES}/>
+    </div>
+    <Sel l="Producto" k="producto" opts={['',...PRODUCTOS]}/>
+    <Sel l="Etapa" k="etapa" opts={ETAPAS}/>
+    <Inp l="Próximo contacto" k="prox" t="date"/>
+    <Ta l="Observaciones" k="obs"/>
+  </div>;
+}
+
+/* ── Sheet ── */
+function Sheet({title,onClose,children}){
+  return<div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="sheet">
+      <div className="handle"/>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+        <h3 style={{fontSize:16,fontWeight:600}}>{title}</h3>
+        <button onClick={onClose} style={{color:'var(--t3)',fontSize:22,lineHeight:1}}>✕</button>
+      </div>
+      {children}
+    </div>
   </div>;
 }
 
@@ -205,40 +280,32 @@ function LeadModal({settings,onSave,onClose}){
   const [data,setData]=useState({id:uid(),nombre:'',telefono:'',instrumento:'',servicio:'',producto:'',origen:'',tipo:'B2C',etapa:'Frío',prox:'',obs:'',createdAt:new Date().toISOString()});
   const [ph,setPh]=useState([]);
   const save=()=>{if(!data.nombre){alert('Ingresá el nombre');return;}if(ph.length)ss(SK.HIST(data.id),ph);onSave(data);};
-  return(
-    <div className="fixed inset-0 z-50 flex items-end" style={{background:'rgba(0,0,0,0.85)'}} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="bg-gray-900 w-full rounded-t-2xl p-4 max-w-2xl mx-auto overflow-y-auto" style={{maxHeight:'92vh'}}>
-        <div className="flex justify-between items-center mb-4"><h3 className="text-white font-bold">Nuevo lead</h3><button onClick={onClose} className="text-gray-500 text-xl">✕</button></div>
-        <p className="text-gray-400 text-xs font-medium mb-2">📎 Importar chat (opcional — rellena el nombre solo)</p>
-        <PasteImport onImport={items=>setPh(p=>[...items,...p])} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))} compact/>
-        <ZipImport onImport={items=>setPh(p=>[...items,...p])} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))} groqKey={settings?.groqKey}/>
-        <div className="mt-5"><LeadForm data={data} onChange={setData}/></div>
-        <div className="flex gap-2 mt-4 pb-4">
-          <button onClick={onClose} className="flex-1 bg-gray-700 text-white py-3 rounded-xl">Cancelar</button>
-          <button onClick={save} className="flex-1 text-white py-3 rounded-xl" style={{background:'#d97706'}}>Crear lead</button>
-        </div>
-      </div>
+  return<Sheet title="Nuevo lead" onClose={onClose}>
+    <div style={{background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:12,padding:14,marginBottom:18}}>
+      <p className="stitle">Importar chat (opcional · rellena el nombre)</p>
+      <PasteImport onImport={items=>setPh(p=>[...items,...p])} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))}/>
+      <ZipImport onImport={items=>setPh(p=>[...items,...p])} onName={n=>setData(d=>({...d,nombre:d.nombre||n}))} groqKey={settings?.groqKey}/>
     </div>
-  );
+    <LeadForm data={data} onChange={setData}/>
+    <div style={{display:'flex',gap:10,marginTop:18,paddingBottom:4}}>
+      <button className="btn-s" onClick={onClose}>Cancelar</button>
+      <button className="btn-p" onClick={save}>Crear lead</button>
+    </div>
+  </Sheet>;
 }
 
 /* ── SettingsModal ── */
 function SettingsModal({settings,onSave,onClose}){
   const [data,setData]=useState({...settings});
-  return(
-    <div className="fixed inset-0 z-50 flex items-end" style={{background:'rgba(0,0,0,0.85)'}} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="bg-gray-900 w-full rounded-t-2xl p-4 max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-4"><h3 className="text-white font-bold">Ajustes</h3><button onClick={onClose} className="text-gray-500 text-xl">✕</button></div>
-        <label className="text-gray-500 text-xs block mb-1">API Key de Groq (transcripción + IA)</label>
-        <input type="password" value={data.groqKey||''} onChange={e=>setData(d=>({...d,groqKey:e.target.value}))} placeholder="gsk_…" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none mb-1"/>
-        <p className="text-gray-600 text-xs mb-4">console.groq.com → API Keys</p>
-        <div className="flex gap-2 pb-4">
-          <button onClick={onClose} className="flex-1 bg-gray-700 text-white py-3 rounded-xl">Cancelar</button>
-          <button onClick={()=>onSave(data)} className="flex-1 text-white py-3 rounded-xl" style={{background:'#d97706'}}>Guardar</button>
-        </div>
-      </div>
+  return<Sheet title="Ajustes" onClose={onClose}>
+    <label className="lbl">API Key de Groq (transcripción + IA)</label>
+    <input type="password" value={data.groqKey||''} onChange={e=>setData(d=>({...d,groqKey:e.target.value}))} placeholder="gsk_…" style={{marginBottom:6}}/>
+    <p style={{fontSize:11,color:'var(--t3)',marginBottom:20}}>Gratis en console.groq.com</p>
+    <div style={{display:'flex',gap:10,paddingBottom:4}}>
+      <button className="btn-s" onClick={onClose}>Cancelar</button>
+      <button className="btn-p" onClick={()=>onSave(data)}>Guardar</button>
     </div>
-  );
+  </Sheet>;
 }
 
 /* ── Dashboard ── */
@@ -246,47 +313,58 @@ function Dashboard({leads,urgentes,onSelect,onUpdate}){
   const activos=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido').length;
   const ganados=leads.filter(l=>l.etapa==='Ganado').length;
   const bump=(l,d)=>{const b=new Date((l.prox||tod())+'T12:00:00');b.setDate(b.getDate()+d);onUpdate({...l,prox:b.toISOString().split('T')[0]});};
-  return(
-    <div className="space-y-5 mt-2">
-      <div className="grid grid-cols-3 gap-3">
-        {[{v:activos,l:'Activos',c:'#d97706'},{v:urgentes.length,l:'Urgentes',c:urgentes.length?'#f87171':'#34d399'},{v:ganados,l:'Ganados',c:'#34d399'}].map(({v,l,c})=>(
-          <div key={l} className="bg-gray-800 border border-gray-700 rounded-xl p-3 text-center"><div className="text-3xl font-bold" style={{color:c}}>{v}</div><div className="text-gray-500 text-xs mt-1">{l}</div></div>
-        ))}
-      </div>
-      <div>
-        <h2 className="text-white font-semibold mb-3">⚠️ Seguimientos pendientes</h2>
-        {urgentes.length===0?(
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center"><div className="text-4xl mb-2">✓</div><p className="text-gray-400">Estás al día</p></div>
-        ):urgentes.map(l=>(
-          <div key={l.id} className="bg-gray-800 border rounded-xl p-3 mb-2" style={{borderColor:isOver(l.prox)?'#7f1d1d':'#78350f'}}>
-            <div className="flex items-start gap-2">
-              <button onClick={()=>onSelect(l.id)} className="flex-1 text-left">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{background:isOver(l.prox)?'#450a0a':'#431407',color:isOver(l.prox)?'#fca5a5':'#fdba74'}}>{isOver(l.prox)?'⚠ Vencido':'⏰ Hoy'}</span>
-                  <span className="text-gray-500 text-xs">{l.etapa}</span>
-                </div>
-                <div className="text-white font-medium">{l.nombre}</div>
-                <div className="text-gray-400 text-xs">{[l.instrumento,l.servicio,l.producto].filter(Boolean).join(' · ')}</div>
-                <div className="text-gray-500 text-xs">{fmt(l.prox)}</div>
-              </button>
-              <div className="flex flex-col gap-1 shrink-0">
-                <button onClick={()=>bump(l,7)} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-lg">+7d</button>
-                <button onClick={()=>bump(l,14)} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-lg">+14d</button>
+  return<div style={{paddingTop:20,display:'flex',flexDirection:'column',gap:24}}>
+    {/* Stats */}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+      {[{v:activos,l:'Activos',c:'var(--gold)'},{v:urgentes.length,l:'Urgentes',c:urgentes.length?'#fc8181':'#68d391'},{v:ganados,l:'Ganados',c:'#68d391'}].map(({v,l,c})=>(
+        <div key={l} style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:'14px 8px',textAlign:'center'}}>
+          <div style={{fontSize:30,fontWeight:700,color:c,lineHeight:1}}>{v}</div>
+          <div style={{fontSize:10,color:'var(--t3)',marginTop:5,fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em'}}>{l}</div>
+        </div>
+      ))}
+    </div>
+    {/* Urgentes */}
+    <div>
+      <p className="stitle">Seguimientos pendientes</p>
+      {urgentes.length===0?(
+        <div style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:'36px 16px',textAlign:'center'}}>
+          <div style={{fontSize:28,marginBottom:8}}>✓</div>
+          <p style={{color:'var(--t3)',fontSize:13}}>Estás al día con todos los seguimientos</p>
+        </div>
+      ):urgentes.map(l=>(
+        <div key={l.id} style={{background:'var(--surf)',borderRadius:14,padding:14,marginBottom:10,border:'1px solid var(--bdr)',borderLeft:`3px solid ${isOver(l.prox)?'#fc8181':'var(--gold)'}`}}>
+          <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+            <button onClick={()=>onSelect(l.id)} style={{flex:1,textAlign:'left'}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:7,flexWrap:'wrap'}}>
+                <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:6,background:isOver(l.prox)?'#3a0a0a':'#3a2500',color:isOver(l.prox)?'#fc8181':'#f6c860'}}>
+                  {isOver(l.prox)?'Vencido':'Hoy'}
+                </span>
+                <EtapaBadge etapa={l.etapa}/>
               </div>
+              <div style={{fontSize:15,fontWeight:600,marginBottom:3}}>{l.nombre}</div>
+              <div style={{fontSize:12,color:'var(--t2)'}}>{[l.instrumento,l.servicio,l.producto].filter(Boolean).join(' · ')}</div>
+              <div style={{fontSize:11,color:'var(--t3)',marginTop:3}}>{fmt(l.prox)}</div>
+            </button>
+            <div style={{display:'flex',flexDirection:'column',gap:6,flexShrink:0}}>
+              <button onClick={()=>bump(l,7)} style={{fontSize:11,background:'var(--surf2)',color:'var(--t2)',padding:'5px 10px',borderRadius:8,border:'1px solid var(--bdr)'}}>+7d</button>
+              <button onClick={()=>bump(l,14)} style={{fontSize:11,background:'var(--surf2)',color:'var(--t2)',padding:'5px 10px',borderRadius:8,border:'1px solid var(--bdr)'}}>+14d</button>
             </div>
           </div>
-        ))}
-      </div>
-      <div>
-        <h2 className="text-white font-semibold mb-3">Pipeline</h2>
-        {ETAPAS.filter(e=>e!=='Ganado'&&e!=='Perdido').map(e=>{const n=leads.filter(l=>l.etapa===e).length;return(
-          <div key={e} className="flex justify-between bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 mb-1">
-            <span className="text-gray-300">{e}</span><span style={{color:n?'#d97706':'#4b5563',fontWeight:n?600:400}}>{n}</span>
-          </div>
-        );})}
-      </div>
+        </div>
+      ))}
     </div>
-  );
+    {/* Pipeline */}
+    <div>
+      <p className="stitle">Pipeline</p>
+      {ETAPAS.filter(e=>e!=='Ganado'&&e!=='Perdido').map(e=>{
+        const n=leads.filter(l=>l.etapa===e).length;
+        return<div key={e} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'11px 14px',background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:10,marginBottom:6}}>
+          <span style={{fontSize:13,color:'var(--t2)'}}>{e}</span>
+          <span style={{fontSize:14,fontWeight:700,color:n?'var(--gold)':'var(--t3)'}}>{n}</span>
+        </div>;
+      })}
+    </div>
+  </div>;
 }
 
 /* ── LeadsTable ── */
@@ -299,36 +377,40 @@ function LeadsTable({leads,filters,setFilters,onSelect,onDelete}){
     if(filters.q){const q=filters.q.toLowerCase();if(!l.nombre?.toLowerCase().includes(q)&&!l.telefono?.includes(q))return false;}
     return true;
   });
-  return(
-    <div className="space-y-3 mt-2">
-      <input type="text" value={filters.q} onChange={e=>set('q',e.target.value)} placeholder="Buscar nombre o teléfono…" className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none text-sm"/>
-      <div className="grid grid-cols-3 gap-2">
-        {[{k:'etapa',opts:ETAPAS,ph:'Etapa'},{k:'servicio',opts:SERVICIOS,ph:'Servicio'},{k:'origen',opts:ORIGENES,ph:'Origen'}].map(({k,opts,ph})=>(
-          <select key={k} value={filters[k]} onChange={e=>set(k,e.target.value)} className="bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 text-gray-300 focus:outline-none text-xs">
-            <option value="">{ph}</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}
-          </select>
-        ))}
-      </div>
-      <p className="text-gray-500 text-xs">{fl.length} lead{fl.length!==1?'s':''}</p>
-      {fl.length===0?<div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center text-gray-500">Sin resultados</div>:fl.map(l=>(
-        <div key={l.id} className="bg-gray-800 border border-gray-700 rounded-xl p-3">
-          <div className="flex items-start gap-2">
-            <button onClick={()=>onSelect(l.id)} className="flex-1 text-left">
-              <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                <span className={`text-xs px-2 py-0.5 rounded-full ${EC[l.etapa]||'bg-gray-700 text-gray-400'}`}>{l.etapa}</span>
-                {isOver(l.prox)&&<span className="text-xs text-red-400">⚠ Vencido</span>}
-                {isToday(l.prox)&&<span className="text-xs text-yellow-400">⏰ Hoy</span>}
-              </div>
-              <div className="text-white font-medium">{l.nombre}</div>
-              <div className="text-gray-400 text-xs">{[l.instrumento,l.servicio,l.producto].filter(Boolean).join(' · ')}</div>
-              <div className="text-gray-500 text-xs">{[l.origen,l.tipo,l.prox?fmt(l.prox):null].filter(Boolean).join(' · ')}</div>
-            </button>
-            <button onClick={()=>{if(confirm(`Eliminar ${l.nombre}?`))onDelete(l.id)}} className="text-gray-600 text-lg p-1">🗑</button>
-          </div>
-        </div>
+  return<div style={{paddingTop:16,display:'flex',flexDirection:'column',gap:12}}>
+    <input type="text" value={filters.q} onChange={e=>set('q',e.target.value)} placeholder="Buscar nombre o teléfono…"/>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+      {[{k:'etapa',opts:ETAPAS,ph:'Etapa'},{k:'servicio',opts:SERVICIOS,ph:'Servicio'},{k:'origen',opts:ORIGENES,ph:'Origen'}].map(({k,opts,ph})=>(
+        <select key={k} value={filters[k]} onChange={e=>set(k,e.target.value)} style={{fontSize:12,padding:'8px 10px'}}>
+          <option value="">{ph}</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}
+        </select>
       ))}
     </div>
-  );
+    <p style={{fontSize:11,color:'var(--t3)',fontWeight:500}}>{fl.length} lead{fl.length!==1?'s':''}</p>
+    {fl.length===0
+      ?<div style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:'48px 16px',textAlign:'center',color:'var(--t3)',fontSize:13}}>Sin resultados</div>
+      :fl.map(l=>(
+        <div key={l.id} style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,padding:14}}>
+          <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+            <button onClick={()=>onSelect(l.id)} style={{flex:1,textAlign:'left',minWidth:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:7}}>
+                <EtapaBadge etapa={l.etapa}/>
+                {isOver(l.prox)&&<span style={{fontSize:11,color:'#fc8181',fontWeight:600}}>⚠ Vencido</span>}
+                {isToday(l.prox)&&<span style={{fontSize:11,color:'#f6c860',fontWeight:600}}>⏰ Hoy</span>}
+              </div>
+              <div style={{fontSize:15,fontWeight:600,marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.nombre}</div>
+              <div style={{fontSize:12,color:'var(--t2)'}}>{[l.instrumento,l.servicio,l.producto].filter(Boolean).join(' · ')}</div>
+              <div style={{fontSize:11,color:'var(--t3)',marginTop:3}}>{[l.origen,l.tipo,l.prox?fmt(l.prox):null].filter(Boolean).join(' · ')}</div>
+            </button>
+            <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
+              <button onClick={()=>{if(confirm(`Eliminar ${l.nombre}?`))onDelete(l.id)}} style={{color:'var(--t3)',fontSize:16,padding:4}}>🗑</button>
+              <span style={{color:'var(--t3)',fontSize:20}}>›</span>
+            </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>;
 }
 
 /* ── LeadDetail ── */
@@ -342,117 +424,112 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
   const [qual,setQual]=useState('');
 
   useEffect(()=>{setHist(sg(SK.HIST(lead.id),[]));setEditData({...lead});},[lead.id]);
-
   const push=items=>{const next=[...items,...hist];setHist(next);ss(SK.HIST(lead.id),next);};
   const addNote=()=>{if(!note.trim())return;push([{id:uid(),ts:new Date().toISOString(),tipo:'nota',text:note.trim()}]);setNote('');};
-
   const doQualify=async()=>{
-    if(!settings?.groqKey){setQual('Configurá la API key de Groq en ⚙ primero.');return;}
+    if(!settings?.groqKey){setQual('Configurá la key de Groq en ⚙ primero.');return;}
     const src=hist.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text).join('\n\n---\n\n');
-    if(!src){setQual('Importá el chat de WhatsApp primero (tab Importar).');return;}
+    if(!src){setQual('Importá el chat primero (tab Importar).');return;}
     setQualifying(true);setQual('');
     try{setQual(await qualify(src,settings.groqKey));}catch(err){setQual(`Error: ${err.message}`);}
     setQualifying(false);
   };
-
   const IC={nota:'📝',chat:'💬',audio:'🎙',error:'⚠️',aviso:'ℹ️'};
 
-  return(
-    <div className="space-y-4 mt-2">
-      {/* Card */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-        <div className="flex justify-between items-start">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-white text-lg font-bold truncate">{lead.nombre||'Sin nombre'}</h2>
-            {lead.telefono&&<a href={`https://wa.me/${lead.telefono.replace(/\D/g,'')}`} target="_blank" className="text-green-400 text-xs mt-1 block">📞 {lead.telefono}</a>}
-          </div>
-          <div className="flex gap-1">
-            <button onClick={()=>setEditing(true)} className="text-gray-500 p-1 text-lg">✏️</button>
-            <button onClick={()=>{if(confirm(`Eliminar ${lead.nombre}?`))onDelete(lead.id)}} className="text-gray-500 p-1 text-lg">🗑</button>
-          </div>
+  return<div style={{paddingTop:16,display:'flex',flexDirection:'column',gap:14}}>
+    {/* Card */}
+    <div className="card">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:20,fontWeight:700,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lead.nombre||'Sin nombre'}</div>
+          {lead.telefono&&<a href={`https://wa.me/${lead.telefono.replace(/\D/g,'')}`} target="_blank" style={{color:'#68d391',fontSize:12}}>📞 {lead.telefono}</a>}
         </div>
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          <span className={`text-xs px-2 py-0.5 rounded-full ${EC[lead.etapa]||'bg-gray-700 text-gray-400'}`}>{lead.etapa}</span>
-          {[lead.instrumento,lead.servicio,lead.origen,lead.tipo].filter(Boolean).map(t=><span key={t} className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">{t}</span>)}
-        </div>
-        {lead.producto&&<div className="text-xs mt-2" style={{color:'#d97706'}}>📦 {lead.producto}</div>}
-        {lead.prox&&<div className={`flex items-center gap-1 mt-2 text-xs ${isOver(lead.prox)?'text-red-400':isToday(lead.prox)?'text-yellow-400':'text-gray-400'}`}>📅 Próximo: {fmt(lead.prox)}{isOver(lead.prox)&&' ⚠ Vencido'}{isToday(lead.prox)&&' — Hoy'}</div>}
-        {lead.obs&&<div className="mt-2 text-gray-400 text-xs bg-gray-900 rounded-lg p-2">{lead.obs}</div>}
-      </div>
-
-      {/* Quick edits */}
-      <div className="grid grid-cols-2 gap-2">
-        <div><label className="text-gray-500 text-xs block mb-1">Etapa</label>
-          <select value={lead.etapa} onChange={e=>onUpdate({...lead,etapa:e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 text-xs text-white focus:outline-none">
-            {ETAPAS.map(e=><option key={e} value={e}>{e}</option>)}
-          </select>
-        </div>
-        <div><label className="text-gray-500 text-xs block mb-1">Próximo contacto</label>
-          <input type="date" value={lead.prox||''} onChange={e=>onUpdate({...lead,prox:e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 text-xs text-white focus:outline-none"/>
+        <div style={{display:'flex',gap:6,flexShrink:0}}>
+          <button onClick={()=>setEditing(true)} style={{background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:8,padding:'6px 10px',fontSize:14,color:'var(--t2)'}}>✏️</button>
+          <button onClick={()=>{if(confirm(`Eliminar ${lead.nombre}?`))onDelete(lead.id)}} style={{background:'var(--surf2)',border:'1px solid var(--bdr)',borderRadius:8,padding:'6px 10px',fontSize:14,color:'var(--t3)'}}>🗑</button>
         </div>
       </div>
-
-      {/* Tabs */}
-      <div className="flex bg-gray-800 rounded-xl p-1 gap-1">
-        {[{id:'hist',l:'Historial'},{id:'import',l:'Importar'},{id:'califica',l:'Calificar'}].map(({id,l})=>(
-          <button key={id} onClick={()=>setTab(id)} className="flex-1 py-2 rounded-lg text-xs transition-colors" style={{background:tab===id?'#374151':'transparent',color:tab===id?'white':'#6b7280'}}>{l}</button>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:12}}>
+        <EtapaBadge etapa={lead.etapa}/>
+        {[lead.instrumento,lead.servicio,lead.origen,lead.tipo].filter(Boolean).map(t=>(
+          <span key={t} className="badge" style={{background:'var(--surf2)',color:'var(--t2)',border:'1px solid var(--bdr)'}}>{t}</span>
         ))}
       </div>
-
-      {tab==='hist'&&(
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <input value={note} onChange={e=>setNote(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addNote()} placeholder="Nota rápida (Enter = guardar)" className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white placeholder-gray-600 text-sm focus:outline-none"/>
-            <button onClick={addNote} className="text-white px-3 rounded-xl text-lg" style={{background:'#d97706'}}>+</button>
-          </div>
-          {hist.length===0?<p className="text-gray-500 text-sm text-center py-8">Sin historial</p>:hist.map(h=>(
-            <div key={h.id} className="bg-gray-800 border border-gray-700 rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-1"><span>{IC[h.tipo]||'📌'}</span><span className="text-gray-500 text-xs">{new Date(h.ts).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>
-              <div className="text-gray-300 text-xs whitespace-pre-wrap leading-relaxed">{h.text}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {tab==='import'&&(
-        <div className="space-y-3">
-          <PasteImport onImport={items=>{push(items);setTab('hist');}} onName={n=>{if(!lead.nombre)onUpdate({...lead,nombre:n});}}/>
-          <details className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-            <summary className="px-4 py-3 text-gray-400 text-xs cursor-pointer">📦 Subir .zip (funciona en PC y navegador del celular)</summary>
-            <div className="px-4 pb-4 pt-3 border-t border-gray-700">
-              <ZipImport onImport={items=>{push(items);setTab('hist');}} onName={n=>{if(!lead.nombre)onUpdate({...lead,nombre:n});}} groqKey={settings?.groqKey}/>
-            </div>
-          </details>
-        </div>
-      )}
-
-      {tab==='califica'&&(
-        <div className="space-y-3">
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-            <p className="text-gray-300 font-medium mb-1">🤖 Análisis IA del lead</p>
-            <p className="text-gray-500 text-xs mb-3">Analiza el chat importado con Llama (Groq). Necesitás la key configurada.</p>
-            <button onClick={doQualify} disabled={qualifying} className="w-full text-white py-3 rounded-xl text-sm font-medium" style={{background:qualifying?'#374151':'#d97706',color:qualifying?'#6b7280':'white'}}>
-              {qualifying?'Analizando…':'Calificar lead'}
-            </button>
-          </div>
-          {qual&&<div className="bg-gray-800 border rounded-xl p-4" style={{borderColor:'#92400e'}}><Md text={qual}/></div>}
-        </div>
-      )}
-
-      {editing&&(
-        <div className="fixed inset-0 z-50 flex items-end" style={{background:'rgba(0,0,0,0.85)'}} onClick={e=>e.target===e.currentTarget&&setEditing(false)}>
-          <div className="bg-gray-900 w-full rounded-t-2xl p-4 max-w-2xl mx-auto overflow-y-auto" style={{maxHeight:'92vh'}}>
-            <div className="flex justify-between items-center mb-4"><h3 className="text-white font-bold">Editar lead</h3><button onClick={()=>setEditing(false)} className="text-gray-500 text-xl">✕</button></div>
-            <LeadForm data={editData} onChange={setEditData}/>
-            <div className="flex gap-2 mt-4 pb-4">
-              <button onClick={()=>setEditing(false)} className="flex-1 bg-gray-700 text-white py-3 rounded-xl">Cancelar</button>
-              <button onClick={()=>{onUpdate({...lead,...editData});setEditing(false);}} className="flex-1 text-white py-3 rounded-xl" style={{background:'#d97706'}}>Guardar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {lead.producto&&<div style={{fontSize:12,color:'var(--gold)',marginTop:10,fontWeight:600}}>📦 {lead.producto}</div>}
+      {lead.prox&&<div style={{display:'flex',alignItems:'center',gap:6,marginTop:10,fontSize:12,color:isOver(lead.prox)?'#fc8181':isToday(lead.prox)?'#f6c860':'var(--t3)'}}>
+        📅 {fmt(lead.prox)}{isOver(lead.prox)&&<span style={{fontWeight:700}}>· Vencido</span>}{isToday(lead.prox)&&<span style={{fontWeight:700}}>· Hoy</span>}
+      </div>}
+      {lead.obs&&<div style={{marginTop:10,fontSize:12,color:'var(--t2)',background:'var(--surf2)',borderRadius:8,padding:'8px 12px',lineHeight:1.7}}>{lead.obs}</div>}
     </div>
-  );
+    {/* Quick edits */}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <div><label className="lbl">Etapa</label>
+        <select value={lead.etapa} onChange={e=>onUpdate({...lead,etapa:e.target.value})} style={{fontSize:12,padding:'8px 10px'}}>
+          {ETAPAS.map(e=><option key={e} value={e}>{e}</option>)}
+        </select>
+      </div>
+      <div><label className="lbl">Próximo contacto</label>
+        <input type="date" value={lead.prox||''} onChange={e=>onUpdate({...lead,prox:e.target.value})} style={{fontSize:12,padding:'8px 10px'}}/>
+      </div>
+    </div>
+    {/* Tabs */}
+    <div className="tabs">
+      {[{id:'hist',l:'Historial'},{id:'import',l:'Importar'},{id:'califica',l:'Calificar'}].map(({id,l})=>(
+        <button key={id} onClick={()=>setTab(id)} className={`tab${tab===id?' on':''}`}>{l}</button>
+      ))}
+    </div>
+
+    {tab==='hist'&&<div style={{display:'flex',flexDirection:'column',gap:10}}>
+      <div style={{display:'flex',gap:8}}>
+        <input value={note} onChange={e=>setNote(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addNote()} placeholder="Nota rápida (Enter = guardar)" style={{flex:1}}/>
+        <button onClick={addNote} style={{background:'var(--gold)',color:'#0f0f0f',borderRadius:10,padding:'10px 16px',fontSize:20,fontWeight:700,flexShrink:0}}>+</button>
+      </div>
+      {hist.length===0
+        ?<div style={{textAlign:'center',padding:'40px 0',color:'var(--t3)',fontSize:13}}>Sin historial — importá el chat o agregá una nota</div>
+        :hist.map(h=>(
+          <div key={h.id} className="card" style={{padding:'12px 14px'}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+              <span style={{fontSize:14}}>{IC[h.tipo]||'📌'}</span>
+              <span style={{fontSize:11,color:'var(--t3)'}}>{new Date(h.ts).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+            </div>
+            <div style={{fontSize:12,color:'var(--t2)',whiteSpace:'pre-wrap',lineHeight:1.7}}>{h.text}</div>
+          </div>
+        ))
+      }
+    </div>}
+
+    {tab==='import'&&<div style={{display:'flex',flexDirection:'column',gap:12}}>
+      <div className="card">
+        <PasteImport onImport={items=>{push(items);setTab('hist');}} onName={n=>{if(!lead.nombre)onUpdate({...lead,nombre:n});}}/>
+      </div>
+      <details className="card" style={{padding:0,overflow:'hidden'}}>
+        <summary style={{padding:'14px 16px',fontSize:12,color:'var(--t2)',cursor:'pointer'}}>📦 Subir .zip (funciona en PC y navegador del celular)</summary>
+        <div style={{padding:'0 16px 16px',borderTop:'1px solid var(--bdr)'}}>
+          <div style={{height:12}}/>
+          <ZipImport onImport={items=>{push(items);setTab('hist');}} onName={n=>{if(!lead.nombre)onUpdate({...lead,nombre:n});}} groqKey={settings?.groqKey}/>
+        </div>
+      </details>
+    </div>}
+
+    {tab==='califica'&&<div style={{display:'flex',flexDirection:'column',gap:12}}>
+      <div className="card">
+        <p style={{fontSize:14,fontWeight:600,marginBottom:4}}>🤖 Análisis IA del lead</p>
+        <p style={{fontSize:12,color:'var(--t3)',marginBottom:14,lineHeight:1.6}}>Analiza el chat importado con Llama 70b (Groq) y sugiere etapa y próximo paso.</p>
+        <button onClick={doQualify} disabled={qualifying} className="btn-p" style={{opacity:qualifying?.6:1}}>
+          {qualifying?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><Spin/>Analizando…</span>:'Calificar lead'}
+        </button>
+      </div>
+      {qual&&<div className="card" style={{borderColor:'var(--gold-dim)'}}><Md t={qual}/></div>}
+    </div>}
+
+    {editing&&<Sheet title="Editar lead" onClose={()=>setEditing(false)}>
+      <LeadForm data={editData} onChange={setEditData}/>
+      <div style={{display:'flex',gap:10,marginTop:18,paddingBottom:4}}>
+        <button className="btn-s" onClick={()=>setEditing(false)}>Cancelar</button>
+        <button className="btn-p" onClick={()=>{onUpdate({...lead,...editData});setEditing(false);}}>Guardar</button>
+      </div>
+    </Sheet>}
+  </div>;
 }
 
 /* ── App ── */
@@ -460,62 +537,65 @@ function App(){
   const [view,setView]=useState('dashboard');
   const [leads,setLeads]=useState(()=>sg(SK.LEADS,[]));
   const [selId,setSelId]=useState(null);
-  const [settings,setSettings]=useState(()=>{
-    const s=sg(SK.SETTINGS,null);
-    if(!s){const d={groqKey:GKEY};ss(SK.SETTINGS,d);return d;}
-    return s;
-  });
+  const [settings,setSettings]=useState(()=>{const s=sg(SK.SETTINGS,null);if(!s){const d={groqKey:GKEY};ss(SK.SETTINGS,d);return d;}return s;});
   const [modal,setModal]=useState(null);
   const [filters,setFilters]=useState({q:'',etapa:'',servicio:'',origen:''});
 
   const upsert=lead=>setLeads(prev=>{const idx=prev.findIndex(l=>l.id===lead.id);const next=idx>=0?prev.map((l,i)=>i===idx?lead:l):[...prev,lead];ss(SK.LEADS,next);return next;});
   const remove=id=>setLeads(prev=>{const next=prev.filter(l=>l.id!==id);ss(SK.LEADS,next);return next;});
-
   const urgentes=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido'&&(isOver(l.prox)||isToday(l.prox)));
   const selLead=leads.find(l=>l.id===selId);
 
-  return(
-    <div style={{minHeight:'100vh',background:'#111827',color:'#f3f4f6',fontSize:'14px'}}>
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-gray-800 px-4 py-3" style={{background:'#0d0d0d'}}>
-        <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <div className="flex items-center gap-3">
-            {(view==='leads'||view==='detail')&&<button onClick={()=>setView(view==='detail'?'leads':'dashboard')} className="text-gray-400 text-2xl leading-none">‹</button>}
-            <div><div className="font-bold tracking-widest text-base leading-none" style={{color:'#d97706'}}>SCAGLIA</div><div className="text-gray-600 text-xs">CRM · Boquillas</div></div>
-          </div>
-          <div className="flex items-center gap-3">
-            {urgentes.length>0&&<button onClick={()=>setView('dashboard')} className="relative"><span className="text-red-400 text-lg">🔔</span><span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">{urgentes.length}</span></button>}
-            <button onClick={()=>setModal('settings')} className="text-gray-500 text-lg">⚙️</button>
+  return<div style={{minHeight:'100vh',background:'var(--bg)',fontSize:14}}>
+    {/* Header */}
+    <header style={{position:'sticky',top:0,zIndex:20,background:'var(--bg)',borderBottom:'1px solid var(--bdr)',padding:'12px 16px'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',maxWidth:640,margin:'0 auto'}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          {(view==='leads'||view==='detail')&&<button onClick={()=>setView(view==='detail'?'leads':'dashboard')} style={{color:'var(--t2)',fontSize:24,lineHeight:1,padding:'0 4px 0 0'}}>‹</button>}
+          <div>
+            <div style={{fontFamily:"'Playfair Display','Georgia',serif",fontSize:17,fontWeight:700,color:'var(--gold)',letterSpacing:'.06em',lineHeight:1}}>SCAGLIA</div>
+            <div style={{fontSize:9,color:'var(--t3)',letterSpacing:'.14em',textTransform:'uppercase',marginTop:2,fontWeight:600}}>CRM · Boquillas</div>
           </div>
         </div>
-      </header>
-
-      {/* Nav */}
-      <nav className="border-b border-gray-800 px-4" style={{background:'#111827'}}>
-        <div className="flex max-w-2xl mx-auto">
-          {[{id:'dashboard',l:'Inicio'},{id:'leads',l:`Leads (${leads.length})`}].map(({id,l})=>(
-            <button key={id} onClick={()=>setView(id)} className="px-4 py-3 border-b-2 text-sm transition-colors"
-              style={{borderColor:(view===id||(view==='detail'&&id==='leads'))?'#d97706':'transparent',color:(view===id||(view==='detail'&&id==='leads'))?'#d97706':'#6b7280'}}>
-              {l}
-            </button>
-          ))}
+        <div style={{display:'flex',alignItems:'center',gap:14}}>
+          {urgentes.length>0&&<button onClick={()=>setView('dashboard')} style={{position:'relative'}}>
+            <span style={{fontSize:18}}>🔔</span>
+            <span style={{position:'absolute',top:-4,right:-4,background:'#fc8181',color:'#0f0f0f',fontSize:9,fontWeight:700,borderRadius:'50%',width:15,height:15,display:'flex',alignItems:'center',justifyContent:'center'}}>{urgentes.length}</span>
+          </button>}
+          <button onClick={()=>setModal('settings')} style={{color:'var(--t3)',fontSize:18}}>⚙️</button>
         </div>
-      </nav>
-
-      {/* Content */}
-      <main className="max-w-2xl mx-auto p-4 pb-24">
-        {view==='dashboard'&&<Dashboard leads={leads} urgentes={urgentes} onSelect={id=>{setSelId(id);setView('detail');}} onUpdate={upsert}/>}
-        {view==='leads'&&<LeadsTable leads={leads} filters={filters} setFilters={setFilters} onSelect={id=>{setSelId(id);setView('detail');}} onDelete={remove}/>}
-        {view==='detail'&&selLead&&<LeadDetail lead={selLead} settings={settings} onUpdate={upsert} onDelete={id=>{remove(id);setView('leads');}}/>}
-      </main>
-
-      {/* FAB */}
-      {view!=='detail'&&<button onClick={()=>setModal('add')} className="fixed bottom-6 right-6 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-2xl z-10 text-2xl" style={{background:'#d97706'}}>+</button>}
-
-      {modal==='add'&&<LeadModal settings={settings} onSave={l=>{upsert(l);setModal(null);}} onClose={()=>setModal(null)}/>}
-      {modal==='settings'&&<SettingsModal settings={settings} onSave={s=>{ss(SK.SETTINGS,s);setSettings(s);setModal(null);}} onClose={()=>setModal(null)}/>}
-    </div>
-  );
+      </div>
+    </header>
+    {/* Nav */}
+    <nav style={{borderBottom:'1px solid var(--bdr)',padding:'0 16px',background:'var(--bg)'}}>
+      <div style={{display:'flex',maxWidth:640,margin:'0 auto'}}>
+        {[{id:'dashboard',l:'Inicio'},{id:'leads',l:`Leads (${leads.length})`}].map(({id,l})=>(
+          <button key={id} onClick={()=>setView(id)} style={{
+            padding:'11px 16px',fontSize:13,fontWeight:500,background:'none',
+            borderBottom:`2px solid ${(view===id||(view==='detail'&&id==='leads'))?'var(--gold)':'transparent'}`,
+            color:(view===id||(view==='detail'&&id==='leads'))?'var(--gold)':'var(--t3)',
+            transition:'all .15s'
+          }}>{l}</button>
+        ))}
+      </div>
+    </nav>
+    {/* Content */}
+    <main style={{maxWidth:640,margin:'0 auto',padding:'0 16px 100px'}}>
+      {view==='dashboard'&&<Dashboard leads={leads} urgentes={urgentes} onSelect={id=>{setSelId(id);setView('detail');}} onUpdate={upsert}/>}
+      {view==='leads'&&<LeadsTable leads={leads} filters={filters} setFilters={setFilters} onSelect={id=>{setSelId(id);setView('detail');}} onDelete={remove}/>}
+      {view==='detail'&&selLead&&<LeadDetail lead={selLead} settings={settings} onUpdate={upsert} onDelete={id=>{remove(id);setView('leads');}}/>}
+    </main>
+    {/* FAB */}
+    {view!=='detail'&&<button onClick={()=>setModal('add')} style={{
+      position:'fixed',bottom:24,right:20,
+      background:'var(--gold)',color:'#0f0f0f',borderRadius:'50%',
+      width:56,height:56,fontSize:26,fontWeight:300,
+      boxShadow:`0 4px 20px var(--gold-glow)`,zIndex:10,
+      display:'flex',alignItems:'center',justifyContent:'center'
+    }}>+</button>}
+    {modal==='add'&&<LeadModal settings={settings} onSave={l=>{upsert(l);setModal(null);}} onClose={()=>setModal(null)}/>}
+    {modal==='settings'&&<SettingsModal settings={settings} onSave={s=>{ss(SK.SETTINGS,s);setSettings(s);setModal(null);}} onClose={()=>setModal(null)}/>}
+  </div>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
