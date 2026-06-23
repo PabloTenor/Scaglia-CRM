@@ -309,11 +309,26 @@ function DriveImport({settings,onImport,onName,groqKey}){
   );
 }
 
-/* ── runQualifyForLead ── (usado en detalle y en refresh all) */
+/* ── Extraer texto real del historial para la IA ── */
+function buildSrc(hist){
+  return hist
+    .filter(h=>h.tipo==='chat'||h.tipo==='audio')
+    .map(h=>{
+      if(h.tipo==='chat'&&h.mensajes?.length){
+        // Usar mensajes parseados — no el resumen "💬 N mensajes"
+        return h.mensajes.map(m=>`[${m.date} ${m.time}] ${m.who}: ${m.text}`).join('\n');
+      }
+      return h.text||'';
+    })
+    .filter(Boolean)
+    .join('\n\n---\n\n');
+}
+
+/* ── runQualifyForLead ── (refresh all + calificar individual) */
 async function runQualifyForLead(lead,key){
   const hist=sg(SK.HIST(lead.id),[]);
-  const src=hist.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text||'').join('\n\n---\n\n');
-  if(!src)return null;
+  const src=buildSrc(hist);
+  if(!src.trim())return null;
   const [info,result]=await Promise.all([extractInfo(src,key),qualify(src,key)]);
   const updates={ultimoContacto:tod()};
   if(info.nombre)updates.nombre=info.nombre;
@@ -324,8 +339,7 @@ async function runQualifyForLead(lead,key){
   const proxDate=parseProxDate(result);
   if(proxDate)updates.prox=proxDate;
   const analisisItem={id:uid(),ts:new Date().toISOString(),tipo:'analisis',text:result};
-  const newHist=[analisisItem,...hist];
-  ss(SK.HIST(lead.id),newHist);
+  ss(SK.HIST(lead.id),[analisisItem,...hist]);
   return{updates,result};
 }
 
@@ -497,8 +511,8 @@ function LeadModal({leads,settings,onSave,onClose}){
 
   const runQualify=async(items)=>{
     if(!settings?.groqKey)return;
-    const src=items.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text||'').join('\n\n---\n\n');
-    if(!src)return;
+    const src=buildSrc(items);
+    if(!src.trim())return;
     setQualifying(true);
     try{
       const [info,result]=await Promise.all([extractInfo(src,settings.groqKey),qualify(src,settings.groqKey)]);
@@ -583,7 +597,7 @@ function SettingsModal({settings,onSave,onClose}){
 }
 
 /* ── Dashboard ── */
-function Dashboard({leads,urgentes,onSelect,onUpdate,onRefreshAll,refreshing}){
+function Dashboard({leads,urgentes,onSelect,onUpdate,onRefreshAll,refreshing,refreshProgress}){
   const activos=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido').length;
   const ganados=leads.filter(l=>l.etapa==='Ganado').length;
   const bump=(l,d)=>{const b=new Date((l.prox||tod())+'T12:00:00');b.setDate(b.getDate()+d);onUpdate({...l,prox:b.toISOString().split('T')[0]});};
@@ -604,7 +618,7 @@ function Dashboard({leads,urgentes,onSelect,onUpdate,onRefreshAll,refreshing}){
       padding:'12px 16px',fontSize:13,color:refreshing?'var(--gold)':'var(--t2)',
       fontWeight:500,transition:'all .15s',
     }}>
-      {refreshing?<><Spin/>Actualizando todos los leads…</>:<>↻ Refrescar y re-calificar todos los leads</>}
+      {refreshing?<><Spin/>{refreshProgress||'Actualizando…'}</>:<>↻ Refrescar y re-calificar todos los leads</>}
     </button>
 
     <div>
@@ -746,8 +760,8 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
 
   const doQualify=async()=>{
     if(!settings?.groqKey){alert('Configurá la key de Groq en ⚙ primero.');return;}
-    const src=hist.filter(h=>h.tipo==='chat'||h.tipo==='audio').map(h=>h.text||'').join('\n\n---\n\n');
-    if(!src){alert('Importá el chat primero (tab Importar).');return;}
+    const src=buildSrc(hist);
+    if(!src.trim()){alert('Importá el chat primero (tab Importar).');return;}
     setQualifying(true);
     try{
       const [info,result]=await Promise.all([extractInfo(src,settings.groqKey),qualify(src,settings.groqKey)]);
@@ -758,10 +772,8 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
       const found=ETAPAS.find(e=>result.includes(e));if(found)updates.etapa=found;
       const proxDate=parseProxDate(result);if(proxDate)updates.prox=proxDate;
       onUpdate({...lead,...updates});
-      // Guardar análisis en historial
       const analisisItem={id:uid(),ts:new Date().toISOString(),tipo:'analisis',text:result};
       push([analisisItem]);
-      // Notificación
       if(proxDate){
         const d=new Date(proxDate+'T09:00:00');const now=new Date();const delay=d-now;
         if(delay>0)setTimeout(()=>notify('Scaglia CRM — Seguimiento',`${updates.nombre||lead.nombre}: ${updates.etapa||lead.etapa}`),delay);
@@ -899,17 +911,25 @@ function App(){
   const upsert=lead=>setLeads(prev=>{const idx=prev.findIndex(l=>l.id===lead.id);const next=idx>=0?prev.map((l,i)=>i===idx?lead:l):[...prev,lead];ss(SK.LEADS,next);return next;});
   const remove=id=>setLeads(prev=>{const next=prev.filter(l=>l.id!==id);ss(SK.LEADS,next);return next;});
 
+  const [refreshProgress,setRefreshProgress]=useState('');
   const refreshAll=async()=>{
     if(!settings?.groqKey){alert('Configurá la key de Groq en ⚙ primero.');return;}
     setRefreshing(true);
     const activos=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido');
-    for(const lead of activos){
+    const conChat=activos.filter(l=>{const h=sg(SK.HIST(l.id),[]);return h.some(i=>i.tipo==='chat'&&i.mensajes?.length);});
+    if(conChat.length===0){setRefreshing(false);alert('No hay leads con chat importado para calificar.');return;}
+    let ok=0;
+    for(let i=0;i<conChat.length;i++){
+      const lead=conChat[i];
+      setRefreshProgress(`${i+1}/${conChat.length}: ${lead.nombre||'...'}`);
       try{
         const res=await runQualifyForLead(lead,settings.groqKey);
-        if(res)upsert({...lead,...res.updates});
+        if(res){upsert({...lead,...res.updates});ok++;}
       }catch(e){}
     }
     setRefreshing(false);
+    setRefreshProgress('');
+    alert(`✓ ${ok} lead(s) actualizados`);
   };
 
   const urgentes=leads.filter(l=>l.etapa!=='Ganado'&&l.etapa!=='Perdido'&&(isOver(l.prox)||isToday(l.prox)));
@@ -942,7 +962,7 @@ function App(){
       </div>
     </nav>
     <main style={{maxWidth:640,margin:'0 auto',padding:'0 16px 100px'}}>
-      {view==='dashboard'&&<Dashboard leads={leads} urgentes={urgentes} onSelect={id=>{setSelId(id);setView('detail');}} onUpdate={upsert} onRefreshAll={refreshAll} refreshing={refreshing}/>}
+      {view==='dashboard'&&<Dashboard leads={leads} urgentes={urgentes} onSelect={id=>{setSelId(id);setView('detail');}} onUpdate={upsert} onRefreshAll={refreshAll} refreshing={refreshing} refreshProgress={refreshProgress}/>}
       {view==='leads'&&<LeadsTable leads={leads} filters={filters} setFilters={setFilters} onSelect={id=>{setSelId(id);setView('detail');}} onDelete={remove}/>}
       {view==='detail'&&selLead&&<LeadDetail lead={selLead} settings={settings} onUpdate={upsert} onDelete={id=>{remove(id);setView('leads');}}/>}
     </main>
