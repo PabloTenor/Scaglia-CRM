@@ -311,12 +311,13 @@ function LeadModal({settings,onSave,onClose}){
     setQualifying(true);
     try{
       const [info,result]=await Promise.all([extractInfo(src,settings.groqKey),qualify(src,settings.groqKey)]);
-      // Auto-fill extracted fields
+      // Aplicar campos extraídos — nombre siempre desde la IA si está disponible
       setData(d=>({
         ...d,
-        nombre:      d.nombre      || info.nombre      || d.nombre,
-        instrumento: d.instrumento || info.instrumento || d.instrumento,
-        servicio:    d.servicio    || info.servicio    || d.servicio,
+        nombre:      info.nombre      || d.nombre,
+        instrumento: info.instrumento || d.instrumento,
+        servicio:    info.servicio    || d.servicio,
+        ultimoContacto: tod(),
       }));
       setQualResult(result);
       const found=ETAPAS.find(e=>result.includes(e));
@@ -469,12 +470,12 @@ function LeadsTable({leads,filters,setFilters,onSelect,onDelete}){
         ?/* ── Vista tabla ── */
           <div style={{background:'var(--surf)',border:'1px solid var(--bdr)',borderRadius:14,overflow:'hidden'}}>
             {/* Header */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',padding:'10px 14px',borderBottom:'1px solid var(--bdr)',background:'var(--surf2)'}}>
-              {['Nombre','Etapa','Próximo'].map(h=><span key={h} style={{fontSize:10,fontWeight:700,color:'var(--t3)',textTransform:'uppercase',letterSpacing:'.08em'}}>{h}</span>)}
+            <div style={{display:'grid',gridTemplateColumns:'1fr auto auto auto',padding:'10px 14px',borderBottom:'1px solid var(--bdr)',background:'var(--surf2)'}}>
+              {['Nombre','Etapa','Próximo','Último'].map(h=><span key={h} style={{fontSize:10,fontWeight:700,color:'var(--t3)',textTransform:'uppercase',letterSpacing:'.08em'}}>{h}</span>)}
             </div>
             {fl.map((l,i)=>{
               const s=bs(l.etapa);
-              return<div key={l.id} style={{display:'grid',gridTemplateColumns:'1fr auto auto',alignItems:'center',padding:'11px 14px',borderBottom:i<fl.length-1?'1px solid var(--bdr)':'none',cursor:'pointer'}}
+              return<div key={l.id} style={{display:'grid',gridTemplateColumns:'1fr auto auto auto',alignItems:'center',padding:'11px 14px',borderBottom:i<fl.length-1?'1px solid var(--bdr)':'none',cursor:'pointer'}}
                 onClick={()=>onSelect(l.id)}>
                 <div style={{minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:8}}>{l.nombre}</div>
@@ -483,13 +484,16 @@ function LeadsTable({leads,filters,setFilters,onSelect,onDelete}){
                     {l.servicio&&<span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:5,background:l.servicio==='Refacing'?'#2d1b5c':'#3a2500',color:l.servicio==='Refacing'?'#c4b5fd':'#f6c860'}}>{l.servicio==='Refacing'?'🔧':'✨'} {l.servicio}</span>}
                   </div>
                 </div>
-                <div style={{padding:'0 10px'}}>
-                  <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:6,background:s.bg,color:s.c,display:'inline-block',whiteSpace:'nowrap'}}>{l.etapa}</span>
+                <div style={{padding:'0 8px'}}>
+                  <span style={{fontSize:11,fontWeight:700,padding:'3px 7px',borderRadius:6,background:s.bg,color:s.c,display:'inline-block',whiteSpace:'nowrap'}}>{l.etapa}</span>
                 </div>
-                <div style={{textAlign:'right',fontSize:11,color:isOver(l.prox)?'#fc8181':isToday(l.prox)?'#f6c860':'var(--t3)',fontWeight:isOver(l.prox)||isToday(l.prox)?600:400,minWidth:60}}>
+                <div style={{textAlign:'right',fontSize:11,color:isOver(l.prox)?'#fc8181':isToday(l.prox)?'#f6c860':'var(--t3)',fontWeight:isOver(l.prox)||isToday(l.prox)?600:400,minWidth:52,padding:'0 8px'}}>
                   {l.prox?fmt(l.prox):'—'}
-                  {isOver(l.prox)&&<div style={{fontSize:10}}>Vencido</div>}
+                  {isOver(l.prox)&&<div style={{fontSize:10}}>Venc.</div>}
                   {isToday(l.prox)&&<div style={{fontSize:10}}>Hoy</div>}
+                </div>
+                <div style={{textAlign:'right',fontSize:11,color:'var(--t3)',minWidth:52}}>
+                  {l.ultimoContacto?fmt(l.ultimoContacto):'—'}
                 </div>
               </div>;
             })}
@@ -530,7 +534,7 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
   const [qual,setQual]=useState('');
 
   useEffect(()=>{setHist(sg(SK.HIST(lead.id),[]));setEditData({...lead});},[lead.id]);
-  const push=items=>{const next=[...items,...hist];setHist(next);ss(SK.HIST(lead.id),next);};
+  const push=items=>{const next=[...items,...hist];setHist(next);ss(SK.HIST(lead.id),next);onUpdate({...lead,ultimoContacto:tod()});};
   const addNote=()=>{if(!note.trim())return;push([{id:uid(),ts:new Date().toISOString(),tipo:'nota',text:note.trim()}]);setNote('');};
   const [autoEtapa,setAutoEtapa]=useState('');
   const doQualify=async()=>{
@@ -584,7 +588,10 @@ function LeadDetail({lead,settings,onUpdate,onDelete}){
       </div>
       {lead.producto&&<div style={{fontSize:12,color:'var(--gold)',marginTop:10,fontWeight:600}}>📦 {lead.producto}</div>}
       {lead.prox&&<div style={{display:'flex',alignItems:'center',gap:6,marginTop:10,fontSize:12,color:isOver(lead.prox)?'#fc8181':isToday(lead.prox)?'#f6c860':'var(--t3)'}}>
-        📅 {fmt(lead.prox)}{isOver(lead.prox)&&<span style={{fontWeight:700}}>· Vencido</span>}{isToday(lead.prox)&&<span style={{fontWeight:700}}>· Hoy</span>}
+        📅 Próximo: {fmt(lead.prox)}{isOver(lead.prox)&&<span style={{fontWeight:700}}>· Vencido</span>}{isToday(lead.prox)&&<span style={{fontWeight:700}}>· Hoy</span>}
+      </div>}
+      {lead.ultimoContacto&&<div style={{fontSize:11,color:'var(--t3)',marginTop:4}}>
+        Último contacto: {fmt(lead.ultimoContacto)}
       </div>}
       {lead.obs&&<div style={{marginTop:10,fontSize:12,color:'var(--t2)',background:'var(--surf2)',borderRadius:8,padding:'8px 12px',lineHeight:1.7}}>{lead.obs}</div>}
     </div>
